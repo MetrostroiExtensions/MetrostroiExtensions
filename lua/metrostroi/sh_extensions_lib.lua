@@ -534,6 +534,7 @@ local function injectFunction(key, tbl)
 end
 
 local function inject(isBackports)
+    MEL.ResetCustomPhrases()
     MEL._LoadHelpers()
     MEL._OverrideAnimate(MEL.EntTables["gmod_subway_base"])
     MEL._OverrideSetLightPower(MEL.EntTables["gmod_subway_base"])
@@ -613,7 +614,10 @@ local function inject(isBackports)
     MEL._LoadHelpers()
     MEL.ReplaceLoadLanguage()
     -- helper inject to reload all animations
-    if CLIENT then Metrostroi.LoadLanguage(Metrostroi.ChoosedLang) end
+    if CLIENT then 
+        Metrostroi.LoadLanguage(Metrostroi.ChoosedLang)
+        MEL.BuildCustomPhrases()
+    end
 end
 
 discoverRecipies()

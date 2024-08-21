@@ -9,6 +9,8 @@
 -- Копирование любого файла, через любой носитель абсолютно запрещено.
 -- Все авторские права защищены на основании ГК РФ Глава 70.
 -- Автор оставляет за собой право на защиту своих авторских прав согласно законам Российской Федерации.
+MEL.LanguageCustomFields = MEL.LanguageCustomFields or {}
+
 local LanguageIDC = MEL.Constants.LanguageID
 local function handle_buttons(id_parts, id, phrase, ent_tables, ent_class)
     local name = id_parts[LanguageIDC.Buttons.NAME]
@@ -75,6 +77,103 @@ local WEAPON_HANDLERS = {
     ["Purpose"] = function(swep_table, swep_list, swep_class, phrase) swep_table.Purpose = phrase end,
     ["Instructions"] = function(swep_table, swep_list, swep_class, phrase) swep_table.Instructions = phrase end,
 }
+
+function MEL.AddSpawnerFieldPhrase(ent_or_entclass, lang, setting_name, field_name, phrase)
+    if not MEL.LanguageCustomFields[lang] then MEL.LanguageCustomFields[lang] = {} end
+    if not MEL.LanguageCustomFields[lang]["Spawner"] then MEL.LanguageCustomFields[lang]["Spawner"] = {} end
+
+    local class = ent_or_entclass
+
+    if isentity(class) then
+        class = ent_or_entclass:GetClass()
+
+        if ent_or_entclass:GetClass() == "gmod_subway_81-717_mvm" and ent_or_entclass.CustomSettings then
+            class = "gmod_subway_81-717_mvm_custom"
+        end
+    end
+
+    if istable(class) then
+        class = class.entclass
+        
+        if class == "gmod_subway_81-717_mvm" then
+            class = "gmod_subway_81-717_mvm_custom"
+        end
+    end
+
+    if not MEL.LanguageCustomFields[lang]["Spawner"][class] then MEL.LanguageCustomFields[lang]["Spawner"][class] = {} end
+    if not MEL.LanguageCustomFields[lang]["Spawner"][class][setting_name] then MEL.LanguageCustomFields[lang]["Spawner"][class][setting_name] = {} end
+
+    MEL.LanguageCustomFields[lang]["Spawner"][class][setting_name][field_name] = phrase
+end
+
+function MEL.ResetCustomPhrases()
+    MEL.LanguageCustomFields = {}
+end
+
+local SpawnerC = MEL.Constants.Spawner
+
+function MEL.BuildCustomPhrases()
+    local current_lang = MEL.LanguageCustomFields[Metrostroi.ChoosedLang]
+    if current_lang then
+        for type, classes in pairs(current_lang) do
+            if type == "Spawner" then
+                for class, settings in pairs(classes) do
+                    local ent = MEL.getEntTable(class)
+                    local spawner = ent.Spawner
+    
+                    for setting_name, fields in pairs(settings) do
+                        local field_mapping = MEL.SpawnerFieldMappings[class][setting_name]
+                        if not field_mapping then continue end
+    
+                        local field_index = field_mapping.index
+                        
+                        local field_settings = spawner[field_index]
+    
+                        for field_name, phrase in pairs(fields) do
+                            if field_name == "Name" then
+                                field_settings[SpawnerC.TRANSLATION] = phrase
+                            else
+                                local field_type = field_settings[SpawnerC.TYPE]
+                                if field_type == "List" then
+                                    field_settings[SpawnerC.List.ELEMENTS][field_mapping.list_elements[field_name]] = phrase
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    for type, classes in pairs(MEL.LanguageCustomFields["all"] or {}) do
+        if type == "Spawner" then
+            for class, settings in pairs(classes) do
+                local ent = MEL.getEntTable(class)
+                local spawner = ent.Spawner
+
+                for setting_name, fields in pairs(settings) do
+                    local field_mapping = MEL.SpawnerFieldMappings[class][setting_name]
+                    if not field_mapping then continue end
+
+                    local field_index = field_mapping.index
+                    
+                    local field_settings = spawner[field_index]
+
+                    for field_name, phrase in pairs(fields) do
+                        if field_name == "Name" then
+                            field_settings[SpawnerC.TRANSLATION] = Metrostroi.GetPhrase(phrase)
+                        else
+                            local field_type = field_settings[SpawnerC.TYPE]
+                            if field_type == "List" then
+                                field_settings[SpawnerC.List.ELEMENTS][field_mapping.list_elements[field_name]] = Metrostroi.GetPhrase(phrase)
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
 
 local metrostroi_language_softreload = GetConVar("metrostroi_language_softreload")
 function MEL.ReplaceLoadLanguage()
