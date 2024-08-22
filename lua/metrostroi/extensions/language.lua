@@ -122,6 +122,7 @@ function MEL.BuildCustomPhrases()
                     local spawner = ent.Spawner
     
                     for setting_name, fields in pairs(settings) do
+                        if not MEL.SpawnerFieldMappings[class] then continue end
                         local field_mapping = MEL.SpawnerFieldMappings[class][setting_name]
                         if not field_mapping then continue end
     
@@ -152,6 +153,7 @@ function MEL.BuildCustomPhrases()
                 local spawner = ent.Spawner
 
                 for setting_name, fields in pairs(settings) do
+                    if not MEL.SpawnerFieldMappings[class] then continue end
                     local field_mapping = MEL.SpawnerFieldMappings[class][setting_name]
                     if not field_mapping then continue end
 
@@ -212,6 +214,8 @@ function MEL.ReplaceLoadLanguage()
             RunConsoleCommand("spawnmenu_reload")
             hook.Run("GameContentChanged")
         end
+
+        MEL.BuildCustomPhrases()
     end
 end
 

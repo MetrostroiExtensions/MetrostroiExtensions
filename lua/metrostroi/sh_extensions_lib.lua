@@ -614,10 +614,7 @@ local function inject(isBackports)
     MEL._LoadHelpers()
     MEL.ReplaceLoadLanguage()
     -- helper inject to reload all animations
-    if CLIENT then 
-        Metrostroi.LoadLanguage(Metrostroi.ChoosedLang)
-        MEL.BuildCustomPhrases()
-    end
+    if CLIENT then Metrostroi.LoadLanguage(Metrostroi.ChoosedLang) end
 end
 
 discoverRecipies()
