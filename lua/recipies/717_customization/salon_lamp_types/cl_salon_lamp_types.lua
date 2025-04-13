@@ -153,21 +153,4 @@ function RECIPE:Inject(ent, entclass)
             end
         end
     end, 1)
-
-    -- Update interior lights
-    MEL.InjectIntoClientFunction(ent, "UpdateWagonNumber", function(wagon)
-        local new_int_lights_z = 35
-        local int_lights_indexes = {11, 12, 13}
-
-        wagon.Lights[11][2] = Vector(250, 0, new_int_lights_z)
-        wagon.Lights[12][2] = Vector(-50, 0, new_int_lights_z)
-        wagon.Lights[13][2] = Vector(-350, 0, new_int_lights_z)
-
-        -- todo: does not work
-        -- for key, index in pairs(int_lights_indexes) do
-        --     wagon.Lights[index]["brightness"] = 0.2
-        --     wagon.Lights[index]["distance"] = 10
-        --     wagon:SetLightPower(index, false)
-        -- end
-    end, 100)
 end
