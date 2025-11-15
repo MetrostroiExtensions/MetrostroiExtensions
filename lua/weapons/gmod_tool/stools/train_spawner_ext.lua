@@ -390,7 +390,7 @@ function TOOL:OnRemove()
 end
 
 function TOOL:Finish()
-    if self.self.GhostEntities then
+    if self.GhostEntities then
         for _, e in pairs(self.GhostEntities) do
             SafeRemoveEntity(e)
         end

@@ -331,8 +331,8 @@ local function entityTypeCallback(self, index, value)
 end
 
 local function updateWagonCount(numSlider)
-	-- better safe then sorry
-	if numSlider then
+	-- sometimes SetMax is not present while numSlider is... weird
+	if numSlider and numSlider.SetMax then
 		numSlider:SetMax(MaxWagonsOnPlayer)
 	end
 end

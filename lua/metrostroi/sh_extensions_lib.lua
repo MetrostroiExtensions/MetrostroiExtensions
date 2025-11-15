@@ -410,19 +410,60 @@ local function injectFunction(key, tbl)
 
         if not MEL.FunctionDefaults[key] then MEL.FunctionDefaults[key] = {} end
         if not MEL.FunctionDefaults[key][functionName] then MEL.FunctionDefaults[key][functionName] = tbl[functionName] end
-        local buildedInject = function(wagon, ...)
+
+        local targetFunction = MEL.FunctionDefaults[key][functionName]
+        -- PERFORMANCE: before we used unpack and varargs, but they doesn't play nicely with JIT. So this hacky thing is best that i can think of to fix it.
+        local buildedInject = function(wagon, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8)
             for i = #beforeStack, 1, -1 do
-                for _, functionToInject in pairs(beforeStack[i]) do
-                    injectReturnValue = {functionToInject(wagon, ...)}
-                    if injectReturnValue[#injectReturnValue] == MEL.Return then return unpack(injectReturnValue, 1, #injectReturnValue - 1) end
+                local level = beforeStack[i]
+                for j = 1, #level do
+                    local fn = level[j]
+                    local rets = {fn(wagon, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8)}  -- unavoidable allocation :(
+                    local n = #rets
+                    if n > 0 and rets[n] == MEL.Return then
+                        -- Return all but last
+                        if n == 1 then
+                            return
+                        elseif n == 2 then
+                            return rets[1]
+                        elseif n == 3 then
+                            return rets[1], rets[2]
+                        elseif n == 4 then
+                            return rets[1], rets[2], rets[3]
+                        elseif n == 5 then
+                            return rets[1], rets[2], rets[3], rets[4]
+                        else
+                            -- fallback for >5 returns (really rare)
+                            return unpack(rets, 1, n - 1)
+                        end
+                    end
+                    -- else: continue
                 end
             end
 
-            local returnValue = MEL.FunctionDefaults[key][functionName](wagon, ...)
+            local returnValue = targetFunction(wagon, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8)
+
             for i = 1, #afterStack do
-                for _, functionToInject in pairs(afterStack[i]) do
-                    injectReturnValue = {functionToInject(wagon, returnValue, ...)}
-                    if injectReturnValue[#injectReturnValue] == MEL.Return then return unpack(injectReturnValue, 1, #injectReturnValue - 1) end
+                local level = afterStack[i]
+                for j = 1, #level do
+                    local fn = level[j]
+                    local rets = {fn(wagon, returnValue, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8)}
+                    local n = #rets
+                    if n > 0 and rets[n] == MEL.Return then
+                        if n == 1 then
+                            return
+                        elseif n == 2 then
+                            return rets[1]
+                        elseif n == 3 then
+                            return rets[1], rets[2]
+                        elseif n == 4 then
+                            return rets[1], rets[2], rets[3]
+                        elseif n == 5 then
+                            return rets[1], rets[2], rets[3], rets[4]
+                        else
+                            return unpack(rets, 1, n - 1)
+                        end
+                    end
                 end
             end
             return returnValue
