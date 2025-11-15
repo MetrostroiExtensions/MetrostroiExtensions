@@ -3,9 +3,9 @@ TOOL.AddToMenu = false
 local utils = include("entities/gmod_train_spawner_ext/utils.lua")
 local C_MaxWagons = GetConVar("metrostroi_maxwagons")
 if CLIENT then
-    language.Add("Tool.train_spawner_ext.name", "Train Spawner")
-    language.Add("Tool.train_spawner_ext.desc", "Spawns a train")
-    language.Add("Tool.train_spawner.0", "Primary: Spawns a full train. Secondary: Reverse facing (yellow ed when facing the opposite side). Reload: Copy train settings.")
+    language.Add("tool.train_spawner_ext.name", "Train Spawner")
+    language.Add("tool.train_spawner_ext.desc", "Spawns a train")
+    language.Add("tool.train_spawner_ext.0", "Primary: Spawns a full train. Secondary: Reverse facing (yellow ed when facing the opposite side). Reload: Copy train settings.")
     language.Add("SBoxLimit_spawner_wrong_pos", "Wrong train position! Can't spawn")
     language.Add("SBoxLimit_spawner_restrict", "This train is restricted for you")
 end
@@ -390,10 +390,11 @@ function TOOL:OnRemove()
 end
 
 function TOOL:Finish()
-    for _, e in pairs(self.GhostEntities) do
-        SafeRemoveEntity(e)
+    if self.self.GhostEntities then
+        for _, e in pairs(self.GhostEntities) do
+            SafeRemoveEntity(e)
+        end
     end
-
     self.GhostEntities = {}
 end
 
