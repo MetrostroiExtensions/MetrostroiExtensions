@@ -330,6 +330,13 @@ local function entityTypeCallback(self, index, value)
 	timer.Simple(0, function() panelRegistry.rootFrame:SetTall(panelRegistry.rootFrame:GetTall() + 1) end)
 end
 
+local function updateWagonCount(numSlider)
+	-- better safe then sorry
+	if numSlider then
+		numSlider:SetMax(MaxWagonsOnPlayer)
+	end
+end
+
 local function drawSidebar(frame)
 	local panel = vgui.Create("DPanel", frame)
 	panel:SetPaintBackground(false)
@@ -365,7 +372,7 @@ local function drawSidebar(frame)
 	panelRegistry.wagonCount:Dock(TOP)
 	panelRegistry.wagonCount:SetDecimals(0)
 	panelRegistry.wagonCount:SetMin(1)
-	panelRegistry.wagonCount:SetMax(MaxWagonsOnPlayer)
+	updateWagonCount(panelRegistry.wagonCount)
 	panelRegistry.wagonCount:SetValue(panelRegistry.rootFrame:GetCookie("wagonCount", 2))
 	-- WARNING: HACKS AHEAD!
 	-- We don't need label here, cause we got it on top as wagonCountLabel. Can we reuse this label? probably.
@@ -506,10 +513,12 @@ local function createRootFrame()
 end
 
 net.Receive("MetrostroiTrainSpawner", createRootFrame)
+
 net.Receive("MetrostroiMaxWagons", function()
-	MaxWagons = GetGlobalInt("metrostroi_maxtrains") * GetGlobalInt("metrostroi_maxwagons")
+	-- TODO: i hate this logic... seems very wrong
 	MaxWagonsOnPlayer = GetGlobalInt("metrostroi_maxtrains_onplayer") * GetGlobalInt("metrostroi_maxwagons")
-	if trainTypeT and trainTypeT:IsValid() then trainTypeT:SetText(Format("%s(%d/%d)\n%s:%d", Metrostroi.GetPhrase("Spawner.Trains1"), GetGlobalInt("metrostroi_train_count"), MaxWagons, Metrostroi.GetPhrase("Spawner.Trains2"), MaxWagonsOnPlayer)) end
+	updateWagonCount(panelRegistry.wagonCount)
 end)
 
-net.Receive("MetrostroiTrainCount", function() if trainTypeT and trainTypeT:IsValid() then trainTypeT:SetText(Format("%s(%d/%d)\n%s:%d", Metrostroi.GetPhrase("Spawner.Trains1"), GetGlobalInt("metrostroi_train_count"), MaxWagons, Metrostroi.GetPhrase("Spawner.Trains2"), MaxWagonsOnPlayer)) end end)
+-- TODO: should we even do anything on this train count update?
+-- net.Receive("MetrostroiTrainCount", function() if trainTypeT and trainTypeT:IsValid() then trainTypeT:SetText(Format("%s(%d/%d)\n%s:%d", Metrostroi.GetPhrase("Spawner.Trains1"), GetGlobalInt("metrostroi_train_count"), MaxWagons, Metrostroi.GetPhrase("Spawner.Trains2"), MaxWagonsOnPlayer)) end end)
