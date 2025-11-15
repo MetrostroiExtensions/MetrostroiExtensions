@@ -426,7 +426,7 @@ function TOOL:LeftClick(trace)
     if not self.Train then return end
     local class = IsValid(trace.Entity) and trace.Entity:GetClass()
     if class and (trace.Entity.Spawner or class ~= "func_door" and class ~= "prop_door_rotating") then
-        if SERVER and trace.Entity.ClassName == (self.Train.Spawner.head or self.Train.ClassName) or trace.Entity.ClassName == self.Train.Spawner.interim then
+        if SERVER and (trace.Entity.ClassName == (self.Train.Spawner.head or self.Train.ClassName) or trace.Entity.ClassName == self.Train.Spawner.interim) then
             local LastEnt
             local trains = {}
             for k, ent in ipairs(trace.Entity.WagonList) do
@@ -477,7 +477,7 @@ end
 function TOOL:RightClick(trace)
     if not self.Train then return end
     if IsValid(trace.Entity) then
-        if SERVER and trace.Entity.ClassName == (self.Train.Spawner.head or self.Train.ClassName) or trace.Entity.ClassName == self.Train.Spawner.interim then
+        if SERVER and (trace.Entity.ClassName == (self.Train.Spawner.head or self.Train.ClassName) or trace.Entity.ClassName == self.Train.Spawner.interim) then
             local LastEnt
             local trains = {}
             for k, ent in pairs(trace.Entity.WagonList) do
