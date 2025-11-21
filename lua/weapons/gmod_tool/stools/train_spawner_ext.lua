@@ -234,7 +234,7 @@ function TOOL:SpawnWagon(trace)
 
         if i > 1 then
             local rot = i == self.Settings.wagonCount or math.random() > 0.5 -- Rotate last wagon or rotate it randomly
-			if rotatefunc then rot = rotatefunc(i, self.Settings.WagNum) end
+			if rotatefunc then rot = rotatefunc(i, self.Settings.wagonCount) end
             if spawnfunc then
                 ent = ents.Create(spawnfunc(i, settingsFlatten, self.Train))
             else
