@@ -445,7 +445,7 @@ local function drawSidebar(frame)
 	panelRegistry.wagonCount:SetDecimals(0)
 	panelRegistry.wagonCount:SetMin(1)
 	updateWagonCount(panelRegistry.wagonCount)
-	panelRegistry.wagonCount:SetValue(panelRegistry.rootFrame:GetCookie("wagonCount", 2))
+	panelRegistry.wagonCount:SetValue(math.Clamp(panelRegistry.rootFrame:GetCookie("wagonCount", 2), 1, MaxWagonsOnPlayer))
 	-- WARNING: HACKS AHEAD!
 	-- We don't need label here, cause we got it on top as wagonCountLabel. Can we reuse this label? probably.
 	panelRegistry.wagonCount.Label:SetSize(0, 0)
