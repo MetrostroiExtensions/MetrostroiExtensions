@@ -505,7 +505,7 @@ local function spawn()
 	settings.wagonCount = math.Round(panelRegistry.wagonCount:GetValue(), 0)
 	for name, value in pairs(settings.options) do
 		local mapping = MEL.SpawnerFieldMappings[currentSettings.entityClass][name]
-		if mapping then
+		if mapping and mapping.list_elements[value] then
 			settings.options[name] = mapping.list_elements[value]
 		else
 			settings.options[name] = value
