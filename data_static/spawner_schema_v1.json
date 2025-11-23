@@ -5,6 +5,10 @@
     "description": "Spawner settings as json. Used in presets and just simple settings saving",
     "type": "object",
     "properties": {
+        "name": {
+            "description": "Displayed name",
+            "type": "string"
+        },
         "entityClass": {
             "description": "Entity class that would be spawned (e.g. gmod_subway_81-717_mvm_custom)",
             "type": "string"
@@ -21,6 +25,10 @@
                     {
                         "description": "Used in list (combobox) type",
                         "type": "integer"
+                    },
+                    {
+                        "description": "Used in list (combobox) type for skins",
+                        "type": "string"
                     },
                     {
                         "description": "Used in slider type",

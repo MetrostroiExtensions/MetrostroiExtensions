@@ -4,6 +4,8 @@ local SidebarPanel = include("elements/sidebar_panel.lua")
 local ListOption = include("elements/list_option.lua")
 local CheckboxOption = include("elements/checkbox_option.lua")
 local SliderOption = include("elements/slider_option.lua")
+local PresetCreatorDialog = include("elements/preset_creator_dialog.lua")
+local PresetManagerDialog = include("elements/preset_manager_dialog.lua")
 -- used then there is no spawnmenu image for entity
 local BACKUP_TRAIN_IMAGE = "vgui/entities/gmod_subway_none"
 local DEFAULT_WIDTH = utils.resizeWidth(655)
@@ -15,7 +17,6 @@ local currentSettings = {
 local panelRegistry = {}
 local entityTypes = {}
 local entityTypesIndexes = {}
-
 surface.CreateFont("Arial15Bold", {
 	font = "Arial",
 	extended = true,
@@ -93,10 +94,9 @@ local function saveLatestSettings()
 end
 
 local function drawMenuBar(frame)
-	local menuBar = vgui.Create("DMenuBar", frame)
-	menuBar:DockMargin(-3, -6, -3, 0)
-	local presets = menuBar:AddMenu("Пресеты")
-	local help = menuBar:AddMenu("Справка")
+	panelRegistry.menuBar = vgui.Create("DMenuBar", frame)
+	panelRegistry.menuBar:DockMargin(-3, -6, -3, 0)
+	panelRegistry.presetsMenu = panelRegistry.menuBar:AddMenu(Metrostroi.GetPhrase("Spawner.Presets"))
 end
 
 local function getEntityTypes()
@@ -120,11 +120,10 @@ end
 local optionsPanelsRegistry = {}
 local optionsRegistry = {}
 local isAllDraw = false
-
 local function updateListSettingsDecorator(name, callback)
 	return function(self, index, value, data)
 		if isAllDraw and callback then callback(self, optionsPanelsRegistry) end
-		currentSettings.options[name] = data
+		currentSettings.options[name] = MEL.SpawnerFieldMappings[currentSettings.entityClass][name].list_elements_indexed[data] or data
 	end
 end
 
@@ -140,7 +139,6 @@ local function createList(option)
 		if not setting.FirstId then setting.FirstId = i end
 		setting:AddChoice(value, i)
 	end
-
 	return setting
 end
 
@@ -198,6 +196,7 @@ local function drawOptions(options)
 		-- TODO: why?
 		return
 	end
+
 	-- First pass: create and not call any callbacks
 	for _, option in pairs(options) do
 		createFunction = nil
@@ -211,7 +210,9 @@ local function drawOptions(options)
 				panelRegistry.spawnMode:AddChoice(value, i)
 			end
 
-			panelRegistry.spawnMode:ChooseOptionID(currentSettings.options[option.Name] or option.Default or 1)
+			-- FIXME: forgive me god wtf is this shit lol
+			local valueID = MEL.SpawnerFieldMappings[currentSettings.entityClass][option.Name].list_elements[currentSettings.options[option.Name]]
+			panelRegistry.spawnMode:ChooseOptionID(valueID or option.Default or 1)
 			panelRegistry.spawnMode.OnSelect = updateListSettingsDecorator(option.Name)
 			continue
 		end
@@ -260,7 +261,6 @@ local function drawSections(sections)
 	isAllDraw = false
 	optionsPanelsRegistry = {}
 	optionsRegistry = {}
-
 	-- draw Default section first without section label
 	drawSubsections(sections.Default)
 	sections.Default = nil
@@ -280,17 +280,13 @@ local function drawSections(sections)
 
 	-- Some trains rely on this (e.g. Ezh3 RU1)
 	optionsPanelsRegistry.WagNum = panelRegistry.wagonCount
-
 	isAllDraw = true
 	-- Second pass: create and call all of callbacks, select values and of that shit
 	for name, setting in pairs(optionsPanelsRegistry) do
 		if name == "SpawnMode" or name == "WagNum" then continue end
 		local option = optionsRegistry[name]
 		if not setting or not option then continue end
-
-		if option.ChangeCallback then
-			option.ChangeCallback(setting.ComboBox or setting.Slider or setting.CheckBox, optionsPanelsRegistry)
-		end
+		if option.ChangeCallback then option.ChangeCallback(setting.ComboBox or setting.Slider or setting.CheckBox, optionsPanelsRegistry) end
 		-- FIXME: Dynamically created options (e.g. Attach508t on RU1) are not saving their value
 		-- Possibly because they populate their list after that invocation below
 		local defaultValue = nil
@@ -304,8 +300,78 @@ local function drawSections(sections)
 		else
 			defaultValue = 1
 		end
-setting:SetValue(defaultValue)
+
+		setting:SetValue(defaultValue)
 	end
+end
+
+local function applyPresetFactory(presetName)
+	return function()
+		local preset_table = utils.preset.presets[currentSettings.entityClass][presetName]
+		for option_name, option_value in pairs(preset_table.options) do
+			local option_panel = optionsPanelsRegistry[option_name]
+			if option_panel then
+				panel_name = option_panel:GetName()
+				mapping_value = MEL.SpawnerFieldMappings[currentSettings.entityClass][option_name].list_elements[option_value]
+				discovered_value = nil
+				if panel_name == "ExtSpawnerCheckboxOption" or panel_name == "ExtSpawnerSliderOption" then
+					discovered_value = option_value
+				elseif mapping_value then
+					discovered_value = mapping_value
+				elseif option_panel.OptionByData and option_panel.OptionByData[option_value] then
+					discovered_value = option_value
+				end
+
+				if discovered_value ~= nil then
+					if option_name == "SpawnMode" then
+						-- FIXME: weird special case...
+						option_panel:ChooseOptionID(discovered_value)
+					else
+						option_panel:SetValue(discovered_value)
+					end
+				end
+			end
+		end
+
+		notification.AddLegacy(Metrostroi.GetPhrase("Spawner.PresetApplied"), NOTIFY_HINT, 2)
+	end
+end
+
+local drawPresets
+local function createPreset(_, name)
+	presetSettings = table.Copy(currentSettings)
+	presetSettings.name = name
+	utils.preset.saveNew(Format("preset_%s", os.date("%Y_%m_%d-%H_%M_%S", os.time())), presetSettings)
+	-- TODO: Not so efficient :)
+	drawPresets()
+end
+
+function drawPresets()
+	utils.preset.discover()
+	panelRegistry.presetsMenu:Clear()
+
+	for name, presetTable in pairs(utils.preset.presets[currentSettings.entityClass] or {}) do
+		panelRegistry.presetsMenu:AddOption(presetTable.name or name, applyPresetFactory(name))
+	end
+
+	panelRegistry.presetsMenu:AddSpacer()
+
+	panelRegistry.createNewPreset = panelRegistry.presetsMenu:AddOption(Metrostroi.GetPhrase("Spawner.NewPreset"), function()
+		local presetCreatorDialog = vgui.CreateFromTable(PresetCreatorDialog, panelRegistry.rootFrame)
+		presetCreatorDialog.OnCreatePressed = createPreset
+	end)
+	panelRegistry.createNewPreset:SetIcon("icon16/add.png")
+
+	panelRegistry.presetsManageMenu = panelRegistry.presetsMenu:AddOption(Metrostroi.GetPhrase("Spawner.ManagePresets"), function ()
+		local presetManagerDialog = vgui.CreateFromTable(PresetManagerDialog, panelRegistry.rootFrame)
+		for name, presetTable in pairs(utils.preset.presets[currentSettings.entityClass] or {}) do
+			presetManagerDialog:AddPreset(presetTable.name or name, presetTable)
+		end
+		presetManagerDialog.UpdateCallback = function()
+			drawPresets()
+		end
+	end)
+	panelRegistry.presetsManageMenu:SetIcon("icon16/cog_edit.png")
 end
 
 local function entityTypeCallback(self, index, value)
@@ -321,6 +387,9 @@ local function entityTypeCallback(self, index, value)
 	image = string.Replace(image, "_custom", "")
 	panelRegistry.entityImage:SetImage(image, BACKUP_TRAIN_IMAGE)
 	panelRegistry.layout:Clear()
+
+	drawPresets()
+
 	local spawner = MEL.getEntTable(currentSettings.entityClass).Spawner
 	local sections = aggregateBySection(utils.convertToNamedFormat(spawner))
 	drawSections(sections)
@@ -332,9 +401,7 @@ end
 
 local function updateWagonCount(numSlider)
 	-- sometimes SetMax is not present while numSlider is... weird
-	if numSlider and numSlider.SetMax then
-		numSlider:SetMax(MaxWagonsOnPlayer)
-	end
+	if numSlider and numSlider.SetMax then numSlider:SetMax(MaxWagonsOnPlayer) end
 end
 
 local function drawSidebar(frame)
@@ -428,6 +495,10 @@ local function spawn()
 	settings.Train = panelRegistry.entityTypeComboBox:GetOptionData(panelRegistry.entityTypeComboBox:GetSelectedID())
 	settings.AutoCouple = true
 	settings.wagonCount = math.Round(panelRegistry.wagonCount:GetValue(), 0)
+	for name, value in pairs(settings.options) do
+		settings.options[name] = MEL.SpawnerFieldMappings[currentSettings.entityClass][name].list_elements[value]
+	end
+
 	-- needed for Metrostroi Advanced
 	settings.WagNum = settings.wagonCount
 	net.Start("train_spawner_open_ext")
@@ -470,7 +541,7 @@ end
 
 local function draw(frame)
 	-- TODO: we don't need this right now, cause actionbar is not usable
-	-- drawMenuBar(frame)
+	drawMenuBar(frame)
 	drawActionbar(frame)
 	drawSidebar(frame)
 	drawMain(frame)
@@ -513,12 +584,10 @@ local function createRootFrame()
 end
 
 net.Receive("MetrostroiTrainSpawner", createRootFrame)
-
 net.Receive("MetrostroiMaxWagons", function()
 	-- TODO: i hate this logic... seems very wrong
 	MaxWagonsOnPlayer = GetGlobalInt("metrostroi_maxtrains_onplayer") * GetGlobalInt("metrostroi_maxwagons")
 	updateWagonCount(panelRegistry.wagonCount)
 end)
-
 -- TODO: should we even do anything on this train count update?
 -- net.Receive("MetrostroiTrainCount", function() if trainTypeT and trainTypeT:IsValid() then trainTypeT:SetText(Format("%s(%d/%d)\n%s:%d", Metrostroi.GetPhrase("Spawner.Trains1"), GetGlobalInt("metrostroi_train_count"), MaxWagons, Metrostroi.GetPhrase("Spawner.Trains2"), MaxWagonsOnPlayer)) end end)

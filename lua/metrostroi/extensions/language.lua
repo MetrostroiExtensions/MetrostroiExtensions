@@ -75,13 +75,14 @@ local function handle_spawner(id_parts, id, phrase, ent_tables, ent_class)
 end
 
 local ENTITY_HANDLERS = {
-    ["Name"] = function(id_parts, id, phrase, ent_table, ent_class, ent_list)
-        if not ent_list[class] then
-            if ent_table.Spawner then ent_table.Spawner.Name = phrase end
-            return
+    ["Name"] = function(id_parts, id, phrase, ent_tables, ent_class, ent_list)
+        for _, ent_table in pairs(ent_tables) do
+            if not ent_list[ent_class] then
+                if ent_table.Spawner then ent_table.Spawner.Name = phrase end
+                continue
+            end
+            ent_list[ent_class].PrintName = phrase
         end
-
-        ent_list[ent_class].PrintName = phrase
     end,
     ["Buttons"] = handle_buttons,
     ["Spawner"] = handle_spawner,

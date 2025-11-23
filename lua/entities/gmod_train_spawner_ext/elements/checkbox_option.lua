@@ -1,6 +1,7 @@
 PANEL = {}
 
 function PANEL:Init()
+	self:SetName("ExtSpawnerCheckboxOption")
 	self:SetSize(200, 50)
 	self:SetPaintBackground(false)
 	self.Label = vgui.Create("DLabel", self)

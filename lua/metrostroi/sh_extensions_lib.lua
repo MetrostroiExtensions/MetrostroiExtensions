@@ -589,12 +589,15 @@ local function inject(isBackports)
     end
 
     MEL._LoadHelpers()
-    MEL.ReplaceLoadLanguage()
     -- -- helper inject to reload all animations
     if CLIENT then Metrostroi.LoadLanguage(Metrostroi.ChoosedLang) end
     MEL.FirstTimeInject = false
     MEL._LogInfo(Format("injected recipies in %f seconds", SysTime() - start_time))
 end
+
+-- we want to do this as soon as possible, so we would save old element values from original Metrostroi
+MEL._populateSpawnerFieldMappings()
+MEL.ReplaceLoadLanguage()
 
 discoverRecipies()
 -- injection logic

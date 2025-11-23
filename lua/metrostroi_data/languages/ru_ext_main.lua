@@ -2,6 +2,21 @@ return [[
 # Metrostroi Extensions russian translations
 
 [ru]
+# spawner
+Spawner.Presets = Пресеты
+Spawner.NewPreset = Новый пресет
+Spawner.ManagePresets = Управление пресетами
+Spawner.PresetApplied = Пресет применен
+
+Spawner.PresetCreator.Title = Новый пресет
+Spawner.PresetCreator.NameLabel = Имя пресета
+Spawner.PresetCreator.NamePlaceholder = Новый пресет
+Spawner.PresetCreator.CreateButton = Создать пресет
+
+Spawner.PresetManager.Title = Управление пресетами
+Spawner.PresetManager.NameColumn = Имя пресета
+Spawner.PresetManager.DeleteButton = Удалить
+
 # salon lamps
 Entities.gmod_subway_81-717_mvm_custom.Spawner.SalonLampType.Name = Лампы в салоне
 Entities.gmod_subway_81-717_mvm_custom.Spawner.SalonLampType.Random = @[Common.Spawner.Random]

@@ -59,9 +59,7 @@ end
 function MEL.Helpers.SpawnerEnsureNamedFormat(option)
     local convertedOption = {}
     -- TODO: why do we even get functions here sometimes?
-    if isfunction(option) then
-        return option
-    end
+    if isfunction(option) then return option end
     -- already in named format, no need to convert it
     if option.Name then
         convertedOption = option
@@ -142,32 +140,44 @@ function MEL.BodygroupLookup(model)
             bodyGroupData[subModel] = subModelId
         end
     end
+
     entity:Remove()
     return transformed
 end
 
-local function populateSpawnerFieldMappings()
+function MEL._populateSpawnerFieldMappings()
     for _, train_class in pairs(MEL.TrainClasses) do
         local ent_table = MEL.getEntTable(train_class)
         if not ent_table.Spawner then continue end
-        MEL.SpawnerFieldMappings[train_class] = {}
+        if not MEL.SpawnerFieldMappings[train_class] then MEL.SpawnerFieldMappings[train_class] = {} end
+        local updated_fields = {}
         for field_i, field in pairs(ent_table.Spawner) do
             field = MEL.Helpers.SpawnerEnsureNamedFormat(field)
             if istable(field) and isstring(field.Name) then
                 local field_name = field.Name
-                if MEL.SpawnerFieldMappings[train_class][field_name] then continue end
-                MEL.SpawnerFieldMappings[train_class][field_name] = {
-                    index = field_i,
-                    list_elements = {},
-                    list_elements_indexed = {}
-                }
+                updated_fields[field_name] = true
+                if MEL.SpawnerFieldMappings[train_class][field_name] then
+                    MEL.SpawnerFieldMappings[train_class][field_name].index = field_i
+                else
+                    MEL.SpawnerFieldMappings[train_class][field_name] = {
+                        index = field_i,
+                        list_elements = {},
+                        list_elements_indexed = {}
+                    }
+                end
 
                 if field.Type == SpawnerC.TYPE_LIST and istable(field.Elements) then
                     for list_i, name in pairs(field.Elements) do
-                        MEL.SpawnerFieldMappings[train_class][field_name].list_elements[name] = list_i
-                        MEL.SpawnerFieldMappings[train_class][field_name].list_elements_indexed[list_i] = name
+                        if not MEL.SpawnerFieldMappings[train_class][field_name].list_elements[name] then MEL.SpawnerFieldMappings[train_class][field_name].list_elements[name] = list_i end
+                        if not MEL.SpawnerFieldMappings[train_class][field_name].list_elements_indexed[list_i] then MEL.SpawnerFieldMappings[train_class][field_name].list_elements_indexed[list_i] = name end
                     end
                 end
+            end
+        end
+        -- FIXME: hack to delete field from mapping that was deleted somewhere else... seems so wrong, but it works soooo :)
+        for field_name, _ in pairs(MEL.SpawnerFieldMappings[train_class]) do
+            if not updated_fields[field_name] then
+                MEL.SpawnerFieldMappings[train_class] = nil
             end
         end
     end
@@ -203,7 +213,7 @@ local function populateSyncTableHashed()
 end
 
 function MEL._LoadHelpers()
+    MEL._populateSpawnerFieldMappings()
     populateButtonmapButtonMappings()
-    populateSpawnerFieldMappings()
     populateSyncTableHashed()
 end

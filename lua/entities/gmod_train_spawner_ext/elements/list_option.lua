@@ -1,6 +1,7 @@
 PANEL = {}
 
 function PANEL:Init()
+	self:SetName("ExtSpawnerListOption")
 	self.OptionByData = {}
 	self.FirstId = nil
 	self:SetSize(200, 50)
