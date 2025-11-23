@@ -123,7 +123,10 @@ local isAllDraw = false
 local function updateListSettingsDecorator(name, callback)
 	return function(self, index, value, data)
 		if isAllDraw and callback then callback(self, optionsPanelsRegistry) end
-		currentSettings.options[name] = MEL.SpawnerFieldMappings[currentSettings.entityClass][name].list_elements_indexed[data] or data
+		local mappedValue = nil
+		local mapping = MEL.SpawnerFieldMappings[currentSettings.entityClass][name]
+		if mapping then mappedValue = mapping.list_elements_indexed[data] end
+		currentSettings.options[name] = mappedValue or data
 	end
 end
 
@@ -211,7 +214,8 @@ local function drawOptions(options)
 			end
 
 			-- FIXME: forgive me god wtf is this shit lol
-			local valueID = MEL.SpawnerFieldMappings[currentSettings.entityClass][option.Name].list_elements[currentSettings.options[option.Name]]
+			local mapping = MEL.SpawnerFieldMappings[currentSettings.entityClass][option.Name]
+			local valueID = mapping and mapping.list_elements[currentSettings.options[option.Name]] or nil
 			panelRegistry.spawnMode:ChooseOptionID(valueID or option.Default or 1)
 			panelRegistry.spawnMode.OnSelect = updateListSettingsDecorator(option.Name)
 			continue
@@ -311,9 +315,10 @@ local function applyPresetFactory(presetName)
 		for option_name, option_value in pairs(preset_table.options) do
 			local option_panel = optionsPanelsRegistry[option_name]
 			if option_panel then
-				panel_name = option_panel:GetName()
-				mapping_value = MEL.SpawnerFieldMappings[currentSettings.entityClass][option_name].list_elements[option_value]
-				discovered_value = nil
+				local panel_name = option_panel:GetName()
+				local mapping = MEL.SpawnerFieldMappings[currentSettings.entityClass][option_name]
+				local mapping_value = mapping and mapping.list_elements[option_value] or nil
+				local discovered_value = nil
 				if panel_name == "ExtSpawnerCheckboxOption" or panel_name == "ExtSpawnerSliderOption" then
 					discovered_value = option_value
 				elseif mapping_value then
@@ -496,7 +501,12 @@ local function spawn()
 	settings.AutoCouple = true
 	settings.wagonCount = math.Round(panelRegistry.wagonCount:GetValue(), 0)
 	for name, value in pairs(settings.options) do
-		settings.options[name] = MEL.SpawnerFieldMappings[currentSettings.entityClass][name].list_elements[value]
+		local mapping = MEL.SpawnerFieldMappings[currentSettings.entityClass][name]
+		if mapping then
+			settings.options[name] = mapping.list_elements[value]
+		else
+			settings.options[name] = value
+		end
 	end
 
 	-- needed for Metrostroi Advanced
