@@ -406,7 +406,10 @@ end
 
 local function updateWagonCount(numSlider)
 	-- sometimes SetMax is not present while numSlider is... weird
-	if numSlider and numSlider.SetMax then numSlider:SetMax(MaxWagonsOnPlayer) end
+	if numSlider and numSlider.SetMax then
+		numSlider:SetMax(MaxWagonsOnPlayer)
+		numSlider:SetValue(math.Clamp(numSlider:GetValue(), 1, MaxWagonsOnPlayer))
+	end
 end
 
 local function drawSidebar(frame)
