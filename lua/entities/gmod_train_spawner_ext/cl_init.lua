@@ -125,7 +125,7 @@ local function updateListSettingsDecorator(name, callback)
 		if isAllDraw and callback then callback(self, optionsPanelsRegistry) end
 		local mappedValue = nil
 		local mapping = MEL.SpawnerFieldMappings[currentSettings.entityClass][name]
-		if mapping then mappedValue = mapping.list_elements_indexed[data] end
+		if mapping and mapping.list_elements_indexed then mappedValue = mapping.list_elements_indexed[data] end
 		currentSettings.options[name] = mappedValue or data
 	end
 end
