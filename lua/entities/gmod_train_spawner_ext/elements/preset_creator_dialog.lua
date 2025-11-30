@@ -19,7 +19,7 @@ function PANEL:Init()
     self.nameEdit:SetPlaceholderText(Metrostroi.GetPhrase("Spawner.PresetCreator.NamePlaceholder"))
 
     self.nameEdit.OnChange = function(nameEdit)
-        self.createButton:SetDisabled(nameEdit:GetValue() == "")
+        self.createButton:SetDisabled(nameEdit:GetText() == "")
     end
 
     self.createButton = self:Add("DButton")
@@ -30,7 +30,7 @@ function PANEL:Init()
     self.createButton:SetDisabled(true)
 
     self.createButton.DoClick = function()
-        self:OnCreatePressed(self.nameEdit:GetValue())
+        self:OnCreatePressed(self.nameEdit:GetText())
         self:Close()
     end
 end

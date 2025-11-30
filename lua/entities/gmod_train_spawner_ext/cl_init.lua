@@ -346,7 +346,7 @@ local drawPresets
 local function createPreset(_, name)
 	presetSettings = table.Copy(currentSettings)
 	presetSettings.name = name
-	utils.preset.saveNew(Format("preset_%s", os.date("%Y_%m_%d-%H_%M_%S", os.time())), presetSettings)
+	utils.preset.saveNew(Format("preset_%s_%s", utils.preset.safe_name(name), os.date("%Y_%m_%d-%H_%M_%S", os.time())), presetSettings)
 	-- TODO: Not so efficient :)
 	drawPresets()
 end
