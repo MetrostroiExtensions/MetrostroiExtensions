@@ -78,7 +78,7 @@ local CYRILLIC_UPPER_TO_LOWER = {
 
 local function _is_latin(symbol)
 	local code = string.byte(symbol)
-	return (code > 64 and code < 91) or (code > 96 and code < 122)
+	return (code > 64 and code < 91) or (code > 96 and code < 123)
 end
 
 function utils.preset.safe_name(name)
