@@ -8,7 +8,7 @@ commitizen:
   name: cz_conventional_commits
   tag_format: $version
   update_changelog_on_bump: true
-  version: 0.10.3
+  version: 0.11.0
   version_files:
   - lua/metrostroi/extensions/version.lua:MEL.Version
   version_scheme: semver

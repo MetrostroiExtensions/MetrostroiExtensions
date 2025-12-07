@@ -1,3 +1,28 @@
+## 0.11.0 (2025-12-07)
+
+### Feat
+
+- **spawner**: preset name transliterization
+- **spawner**: presets
+
+### Fix
+
+- **spawner**: latest settings apply missing mapping
+- **spawner**: add into is_latin function so it would be used in filename
+- **spawner**: even more mapping checks....
+- **spawner**: more mapping checks....
+- **spawner**: clamp saved wagonCount just in case
+- **spawner**: clamp saved wagonCount just in case
+- **spawner**: more robust check of mapping
+- **spawner**: better maxwagons handling
+- **spawner**: fix translations (#35)
+- **spawner**: right click condition (#35)
+- server freeze on 81-718 RRI  setup
+
+### Perf
+
+- **core**: better inject builder
+
 ## 0.10.3 (2025-10-03)
 
 ### Fix
