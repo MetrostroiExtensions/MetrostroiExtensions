@@ -293,19 +293,20 @@ local function drawSections(sections)
 		if option.ChangeCallback then option.ChangeCallback(setting.ComboBox or setting.Slider or setting.CheckBox, optionsPanelsRegistry) end
 		-- FIXME: Dynamically created options (e.g. Attach508t on RU1) are not saving their value
 		-- Possibly because they populate their list after that invocation below
-		local defaultValue = nil
+		local default_value = nil
 		-- remember that we can deal with boolean values. so if we can't really use one-liner here
 		if currentSettings.options[name] ~= nil then
-			defaultValue = currentSettings.options[name]
+			local mapping = MEL.SpawnerFieldMappings[currentSettings.entityClass][name]
+			default_value = mapping and mapping.list_elements[currentSettings.options[name]] or currentSettings.options[name]
 		elseif option.Default ~= nil then
-			defaultValue = option.Default
+			default_value = option.Default
 		elseif setting.FirstId then
-			defaultValue = setting.FirstId
+			default_value = setting.FirstId
 		else
-			defaultValue = 1
+			default_value = 1
 		end
 
-		setting:SetValue(defaultValue)
+		setting:SetValue(default_value)
 	end
 end
 
