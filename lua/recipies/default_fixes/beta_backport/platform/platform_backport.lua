@@ -591,7 +591,7 @@ function RECIPE:Inject(ent)
     end]]
             -- Add passengers
             if not wagon.PlatformLast and #boardingDoorList == 0 then
-                local target = math.min((Metrostroi.PassengersScale or 50) * wagon.PopularityIndex, wagon:PoolSize() - 1) --300
+                local target = math.min((Metrostroi.PassengersScale or GetConVarNumber("metrostroi_passengers_scale", 50) or 50) * wagon.PopularityIndex, wagon:PoolSize() - 1) --300
                 -- then target = target*0.1 end
                 if target <= 0 then
                     wagon.WindowEnd = wagon.WindowStart
