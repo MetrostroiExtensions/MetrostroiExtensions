@@ -175,11 +175,12 @@ function MEL._populateSpawnerFieldMappings()
             end
         end
         -- FIXME: hack to delete field from mapping that was deleted somewhere else... seems so wrong, but it works soooo :)
-        for field_name, _ in pairs(MEL.SpawnerFieldMappings[train_class]) do
-            if not updated_fields[field_name] then
-                MEL.SpawnerFieldMappings[train_class] = nil
-            end
-        end
+        -- REALLY FIXME: it broke something... lol
+        -- for field_name, _ in pairs(MEL.SpawnerFieldMappings[train_class]) do
+        --     if not updated_fields[field_name] then
+        --         MEL.SpawnerFieldMappings[train_class] = nil
+        --     end
+        -- end
     end
 end
 
