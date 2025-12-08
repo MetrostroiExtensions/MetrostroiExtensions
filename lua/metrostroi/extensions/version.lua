@@ -14,4 +14,4 @@
 -- along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
-MEL.Version = "0.11.1"
+MEL.Version = "0.11.2"
