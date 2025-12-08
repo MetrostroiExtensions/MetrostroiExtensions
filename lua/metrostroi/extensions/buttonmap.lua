@@ -45,9 +45,12 @@ function MEL.ModifyButtonMap(ent, buttonmap_name, buttonmap_callback, button_cal
         if buttonmap_callback then buttonmap_callback(buttonmap) end
         if not buttonmap.buttons then return end
         for i, button in pairs(buttonmap.buttons) do
+            if not ent.ButtonMapCopy[buttonmap_name].buttons[i] then continue end
+
             if ent.ButtonMapCopy[buttonmap_name].buttons[i].model then
-            button.model = table.Copy(ent.ButtonMapCopy[buttonmap_name].buttons[i].model)
+                button.model = table.Copy(ent.ButtonMapCopy[buttonmap_name].buttons[i].model)
             end
+
             if button_callback then button_callback(button, table.Copy(ent.ButtonMapCopy[buttonmap_name].buttons[i])) end
         end
 
