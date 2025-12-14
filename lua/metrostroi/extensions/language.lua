@@ -23,12 +23,12 @@ local function handle_buttons(id_parts, id, phrase, ent_tables, ent_class)
     local buttonmap_index = MEL.GetButtonmapButtonMapping(ent_class, name, id_parts[LanguageIDC.Buttons.ID], true)
     for _, ent_table in pairs(ent_tables) do
         local buttonmap = ent_table.ButtonMap[name]
-        local buttonmap_copy = ent_table.ButtonMapCopy[name]
+        local buttonmap_copy = (ent_table and ent_table.ButtonMapCopy) and ent_table.ButtonMapCopy[name] or {}
         if not buttonmap then return end
         if not buttonmap.buttons then return end
         if not buttonmap_index then return end
         local button = buttonmap.buttons[buttonmap_index]
-        local button_copy = buttonmap_copy.buttons[buttonmap_index]
+        local button_copy = (buttonmap_copy and buttonmap_copy.buttons) and buttonmap_copy.buttons[buttonmap_index] or {}
         if button then button.tooltip = phrase end
         if button_copy then button_copy.tooltip = phrase end
     end
