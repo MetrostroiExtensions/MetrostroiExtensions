@@ -95,6 +95,14 @@ function MEL.AddSpawnerField(ent_or_entclass, field_data, random_field_data, ove
         MEL.RandomFields[entclass_random][field_data.Name] = random_data
     end
 
+    -- -- FIXME: hack to cache untranslated values for new fields. We need this hack after new spawner implementation... something is broken, but i am too lazy to fix it properly
+    -- if field_data.Type == "List" and istable(field_data.Elements) then
+    --     print(field_data.Name)
+    --     for _, value in pairs(field_data.Elements) do
+    --         print(MEL.GetMappingValue(ent_or_entclass, field_data.Name, value), value)
+    --     end
+    -- end
+
     if old_pos then
         table.insert(spawner, old_pos, field_data)
     elseif pos then
@@ -136,18 +144,23 @@ function MEL.GetMappingValue(ent_or_entclass, field_name, element)
     -- try to find index of it, if it non-existent in our SpawnerFieldMappings cache
     for field_i, field in pairs(ent_table.Spawner) do
         field = MEL.Helpers.SpawnerEnsureNamedFormat(field)
-        if istable(field) and isstring(field.Name) and field.Name == field_name then
-            if MEL.SpawnerFieldMappings[ent_class][field_name] and field.Type == SpawnerC.TYPE_LIST then
-                -- just update list_elements and try to find it
-                MEL.SpawnerFieldMappings[ent_class][field_name].list_elements[element] = MEL.Helpers.getListElementIndex(field, element)
+        if istable(field) and isstring(field.Name) and field.Name == field_name and field.Type == SpawnerC.TYPE_LIST then
+            if not MEL.SpawnerFieldMappings[ent_class][field_name] then
+                MEL.SpawnerFieldMappings[ent_class][field_name] = {
+                    index = field_i,
+                    list_elements = {},
+                    list_elements_indexed = {}
+                }
             end
 
-            MEL.SpawnerFieldMappings[ent_class][field_name] = {
-                index = field_i,
-                list_elements = {}
-            }
-
-            if field.Type == SpawnerC.TYPE_LIST and istable(field.Elements) then MEL.SpawnerFieldMappings[ent_class][field_name].list_elements[element] = MEL.Helpers.getListElementIndex(field, element) end
+            if istable(field.Elements) then
+                local list_i = MEL.Helpers.getListElementIndex(field, element)
+                if list_i == nil then
+                    print(element)
+                end
+                MEL.SpawnerFieldMappings[ent_class][field_name].list_elements[element] = list_i
+                MEL.SpawnerFieldMappings[ent_class][field_name].list_elements_indexed[list_i] = element
+            end
         end
     end
 end
