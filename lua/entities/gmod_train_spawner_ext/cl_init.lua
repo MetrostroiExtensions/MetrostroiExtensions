@@ -145,14 +145,18 @@ local function createList(option)
 	return setting
 end
 
-local function updateCheckboxSettingsDecorator(name)
-	return function(self, value) currentSettings.options[name] = value end
+local function updateCheckboxSettingsDecorator(name, callback)
+	return function(self, value) 
+		if isAllDraw and callback then callback(self, optionsPanelsRegistry) end
+
+		currentSettings.options[name] = value 
+	end
 end
 
 local function createCheckbox(option)
 	local setting = panelRegistry.layout:Add(CheckboxOption)
 	setting:SetText(option.Translation)
-	setting.CheckBox.OnChange = updateCheckboxSettingsDecorator(option.Name)
+	setting.CheckBox.OnChange = updateCheckboxSettingsDecorator(option.Name, option.ChangeCallback)
 	return setting
 end
 

@@ -351,7 +351,7 @@ local function injectRandomFieldHelper(entclass, entTable)
     -- add helper inject to server TrainSpawnerUpdate in order to automaticly handle random value
     MEL.InjectIntoServerFunction(entclass, "TrainSpawnerUpdate", function(wagon, ...) randomFieldHelper(wagon, entclass) end, -1)
     -- and inject it to interim too
-    if entTable.spawner then MEL.InjectIntoServerFunction(entTable.spawner.interim, "TrainSpawnerUpdate", function(wagon, ...) randomFieldHelper(wagon, entclass) end, -1) end
+    if entTable.spawner and entTable.spawner.interim then MEL.InjectIntoServerFunction(entTable.spawner.interim, "TrainSpawnerUpdate", function(wagon, ...) randomFieldHelper(wagon, entclass) end, -1) end
 end
 
 local function injectAnimationReloadHelper(entclass, entTable)
