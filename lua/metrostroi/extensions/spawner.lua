@@ -33,20 +33,28 @@ function MEL.FindSpawnerField(ent_or_entclass, field_name)
     end
 end
 
-local function addToReloadTable(ent_class, clientprop_name, field_name)
+local function addToReloadTable(ent_class, clientprop_name_or_names, field_name)
     if not MEL.ClientPropsToReload[ent_class][field_name] then MEL.ClientPropsToReload[ent_class][field_name] = {} end
-    table.insert(MEL.ClientPropsToReload[ent_class][field_name], clientprop_name)
+    if isstring(clientprop_name_or_names) then
+        table.insert(MEL.ClientPropsToReload[ent_class][field_name], clientprop_name_or_names)
+    elseif istable(clientprop_name_or_names) then
+        for _, clientprop_name in pairs(clientprop_name_or_names) do
+            addToReloadTable(ent_class, clientprop_name, field_name)
+        end
+    else
+        MEL._LogError("clientprop_name_or_names is neither string nor table. can't mark nothing for reload, y'now m8?")
+    end
 end
 
-function MEL.MarkClientPropForReload(ent_or_entclass, clientprop_name, field_name_or_names)
+function MEL.MarkClientPropForReload(ent_or_entclass, clientprop_name_or_names, field_name_or_names)
     if SERVER then return end
     local ent_class = MEL.GetEntclass(ent_or_entclass)
     if not MEL.ClientPropsToReload[ent_class] then MEL.ClientPropsToReload[ent_class] = {} end
     if isstring(field_name_or_names) then
-        addToReloadTable(ent_class, clientprop_name, field_name_or_names)
+        addToReloadTable(ent_class, clientprop_name_or_names, field_name_or_names)
     elseif istable(field_name_or_names) then
         for _, field_name in pairs(field_name_or_names) do
-            addToReloadTable(ent_class, clientprop_name, field_name)
+            addToReloadTable(ent_class, clientprop_name_or_names, field_name)
         end
     else
         MEL._LogError("field_name_or_names is neither string nor table. can't mark nothing for reload, y'now m8?")

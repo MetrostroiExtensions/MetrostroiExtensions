@@ -48,13 +48,13 @@ MetrostroiExtensionsLib умеет автоматически пересозда
 Данную функцию стоит использовать для обновления пропа при изменении поля в спавнере.
 ///
 
-`MEL.MarkClientPropForReload(ent_or_entclass, clientprop_name, field_name_or_names)` - помечает данный клиентпроп как требующей перезагрузки при изменении одной или нескольких сетевых переменных.
+`MEL.MarkClientPropForReload(ent_or_entclass, clientprop_name_or_names, field_name_or_names)` - помечает данный клиентпроп как требующей перезагрузки при изменении одной или нескольких сетевых переменных.
 
 *(scope: Client)*
 
 * `ent_or_entclass` - имя энтити или сама энтити
-* `clientprop_name` - имя клиентпропа
-* `field_name_or_names` - имя или таблица с именами клиентпропов
+* `clientprop_name` - имя клиентпропа или таблица с именами клиентпропов
+* `field_name_or_names` - имя поля или таблица с именами полей 
 
 **Пример использования**:
 ```lua
