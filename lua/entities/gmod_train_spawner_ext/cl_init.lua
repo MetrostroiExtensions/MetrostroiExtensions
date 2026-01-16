@@ -243,7 +243,14 @@ local function drawOptions(options)
 end
 
 local function getSectionTranslation(sectionName)
-	return Metrostroi.GetPhrase(Format("Entities.%s.Spawner.Section.%s", currentSettings.entityClass, sectionName))
+	local sectionNameFormated = Format("Entities.%s.Spawner.Section.%s", currentSettings.entityClass, sectionName)
+	local langName = Metrostroi.GetPhrase(sectionNameFormated)
+	if langName == sectionNameFormated then
+		sectionNameFormated = Format("Spawner.Section.%s", sectionName)
+		langName = Metrostroi.GetPhrase(sectionNameFormated)
+	end
+	
+	return langName == sectionNameFormated and sectionName or langName
 end
 
 local function drawSubsections(subsections)
