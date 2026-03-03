@@ -83,6 +83,8 @@ function MEL.Helpers.SpawnerEnsureNamedFormat(option)
             convertedOption.WagonCallback = option[SpawnerC.Boolean.WAGON_CALLBACK]
             convertedOption.ChangeCallback = option[SpawnerC.Boolean.CHANGE_CALLBACK]
         end
+        if option.Section then convertedOption.Section = option.Section end
+        if option.Subsection then convertedOption.Subsection = option.Subsection end
     end
     return convertedOption
 end
