@@ -330,11 +330,6 @@ function RECIPE:Inject(ent)
             end
 
             -- Assign ownership
-            if IsValid(wagon:GetOwner()) then
-                wheels:SetOwner(wagon:GetOwner())
-            elseif IsValid(wagon:GetNW2Entity("TrainEntity"):GetOwner()) then
-                wheels:SetOwner(wagon:GetNW2Entity("TrainEntity"):GetOwner())
-            end
 
             if CPPI and IsValid(wagon:CPPIGetOwner()) then
                 wheels:CPPISetOwner(wagon:CPPIGetOwner())
