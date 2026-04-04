@@ -258,7 +258,9 @@ local function loadRecipe(filename)
 
     MEL.Recipes[RECIPE.ClassName][RECIPE.Scope] = RECIPE
     -- initialize recipe
-    initRecipe(RECIPE)
+    if (RECIPE.BackportPriority and backportsNeeded) or not RECIPE.BackportPriority then
+        initRecipe(RECIPE)
+    end
     RECIPE = nil
 end
 
