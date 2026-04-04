@@ -184,6 +184,10 @@ local function findRecipeFiles(folder, recipe_files)
     end
 end
 
+local function isRecipeEnabled(recipe_class_name)
+ return GetConVar("metrostroi_ext_" .. recipe.ClassName):GetBool()
+end
+
 local function initRecipe(recipe)
     recipe:Init()
     if not ConVarExists("metrostroi_ext_" .. recipe.ClassName) then
@@ -191,8 +195,7 @@ local function initRecipe(recipe)
         CreateConVar("metrostroi_ext_" .. recipe.ClassName, 1, {FCVAR_ARCHIVE, FCVAR_REPLICATED}, "Status of Metrostroi Extensions recipe \"" .. recipe.ClassName .. "\": " .. recipe.Description .. ".", 0, 1)
     end
 
-    if GetConVar("metrostroi_ext_" .. recipe.ClassName):GetBool() then
-        -- if recipe enabled:
+    if isRecipeEnabled(recipe.ClassName) then
         -- add it to inject stack
         if recipe.BackportPriority then
             table.insert(MEL.InjectStack, 1, recipe)
