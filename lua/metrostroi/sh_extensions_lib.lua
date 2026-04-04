@@ -185,7 +185,7 @@ local function findRecipeFiles(folder, recipe_files)
 end
 
 local function isRecipeEnabled(recipe_class_name)
- return GetConVar("metrostroi_ext_" .. recipe.ClassName):GetBool()
+ return GetConVar("metrostroi_ext_" .. recipe_class_name):GetBool()
 end
 
 local function initRecipe(recipe)
