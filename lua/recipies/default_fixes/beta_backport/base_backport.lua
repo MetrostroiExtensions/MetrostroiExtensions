@@ -1789,7 +1789,6 @@ function RECIPE:Inject(ent, entclass)
                 if IsValid(v[1]) then
                     v[1].NoPhysics = v[2] or nil
                     -- Assign ownership
-                    if IsValid(wagon:GetOwner()) then v[1]:SetOwner(wagon:GetOwner()) end
                     if CPPI and IsValid(wagon:CPPIGetOwner()) then v[1]:CPPISetOwner(wagon:CPPIGetOwner()) end
                     -- Some shared general information about the bogey
                     wagon.SquealSound = wagon.SquealSound or math.floor(4 * math.random())
@@ -2019,7 +2018,6 @@ function RECIPE:Inject(ent, entclass)
             bogey.NoPhysics = wagon.NoPhysics
             bogey:Spawn()
             -- Assign ownership
-            if IsValid(wagon:GetOwner()) then bogey:SetOwner(wagon:GetOwner()) end
             if CPPI and IsValid(wagon:CPPIGetOwner()) then bogey:CPPISetOwner(wagon:CPPIGetOwner()) end
             -- Some shared general information about the bogey
             wagon.SquealSound = wagon.SquealSound or math.floor(4 * math.random())
@@ -2060,7 +2058,6 @@ function RECIPE:Inject(ent, entclass)
 
         function ent.AddLightSensor(wagon, pos,ang,model)
             local sensor = ents.Create("gmod_train_autodrive_coil")
-            if IsValid(wagon:GetOwner()) then sensor:SetOwner(wagon:GetOwner()) end
             if CPPI and IsValid(wagon:CPPIGetOwner()) then sensor:CPPISetOwner(wagon:CPPIGetOwner()) end
             sensor:SetPos(wagon:LocalToWorld(pos))
             sensor:SetAngles(wagon:LocalToWorldAngles(ang))
@@ -2083,7 +2080,6 @@ function RECIPE:Inject(ent, entclass)
                     bogey.CoilL = coil
                 end
             -- Assign ownership
-                if IsValid(wagon:GetOwner()) then coil:SetOwner(wagon:GetOwner()) end
                 if CPPI and IsValid(wagon:CPPIGetOwner()) then coil:CPPISetOwner(wagon:CPPIGetOwner()) end
             end
             if right then
@@ -2107,7 +2103,6 @@ function RECIPE:Inject(ent, entclass)
             coupler:Spawn()
 
             -- Assign ownership
-            if IsValid(wagon:GetOwner()) then coupler:SetOwner(wagon:GetOwner()) end
             if CPPI and IsValid(wagon:CPPIGetOwner()) then coupler:CPPISetOwner(wagon:CPPIGetOwner()) end
 
             -- Some shared general information about the bogey
@@ -2208,7 +2203,6 @@ function RECIPE:Inject(ent, entclass)
             seat:SetCollisionGroup(COLLISION_GROUP_WORLD)
             wagon:DrawShadow(false)
             --Assign ownership
-            if IsValid(wagon:GetOwner()) then seat:SetOwner(wagon:GetOwner()) end
             if CPPI and IsValid(wagon:CPPIGetOwner()) then seat:CPPISetOwner(wagon:CPPIGetOwner()) end
             -- Hide the entity visually
             if seat_info.type == "passenger" then
