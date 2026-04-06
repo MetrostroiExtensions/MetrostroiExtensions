@@ -208,12 +208,7 @@ function RECIPE:Inject(ent)
             wagon:ShowHide("mask222_lvz", mask == 2)
             wagon:ShowHide("mask222_mvm", mask == 3)
             wagon:ShowHide("mask141_mvm", mask == 4)
-            wagon:ShowHideSmooth("Headlights222_1", 0)
-            wagon:ShowHideSmooth("Headlights222_2", 0)
-            wagon:ShowHideSmooth("Headlights141_1", 0)
-            wagon:ShowHideSmooth("Headlights141_2", 0)
-            wagon:ShowHideSmooth("Headlights22_1", 0)
-            wagon:ShowHideSmooth("Headlights22_2", 0)
+
             -- впизду, все равно в эксте новые масочки
             -- if mask == 4 then
             --     wagon.LightsOverride[30][2] = Vector(465, -48, -23.5)
@@ -233,12 +228,27 @@ function RECIPE:Inject(ent)
             if mask == 1 then
                 wagon:ShowHideSmooth("Headlights22_1", HL1)
                 wagon:ShowHideSmooth("Headlights22_2", HL2)
+
+                wagon:ShowHideSmooth("Headlights222_1", 0)
+                wagon:ShowHideSmooth("Headlights222_2", 0)
+                wagon:ShowHideSmooth("Headlights141_1", 0)
+                wagon:ShowHideSmooth("Headlights141_2", 0)
             elseif mask <= 3 then
                 wagon:ShowHideSmooth("Headlights222_1", HL1)
                 wagon:ShowHideSmooth("Headlights222_2", HL2)
+
+                wagon:ShowHideSmooth("Headlights141_1", 0)
+                wagon:ShowHideSmooth("Headlights141_2", 0)
+                wagon:ShowHideSmooth("Headlights22_1", 0)
+                wagon:ShowHideSmooth("Headlights22_2", 0)
             elseif mask == 4 then
                 wagon:ShowHideSmooth("Headlights141_1", HL1)
                 wagon:ShowHideSmooth("Headlights141_2", HL2)
+
+                wagon:ShowHideSmooth("Headlights222_1", 0)
+                wagon:ShowHideSmooth("Headlights222_2", 0)
+                wagon:ShowHideSmooth("Headlights22_1", 0)
+                wagon:ShowHideSmooth("Headlights22_2", 0)
             end
 
             local seats = wagon:GetNW2Int("SeatType", 1)
