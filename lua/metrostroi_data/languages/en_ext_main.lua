@@ -17,6 +17,9 @@ Spawner.PresetManager.Title = Manage presets
 Spawner.PresetManager.NameColumn = Preset name
 Spawner.PresetManager.DeleteButton = Delete
 
+# schemes
+Entities.gmod_subway_81-717_mvm_custom.Spawner.SchemesType.Name = Navigation schemes
+
 # salon lamps
 Entities.gmod_subway_81-717_mvm_custom.Spawner.SalonLampType.Name = Salon lamps
 Entities.gmod_subway_81-717_mvm_custom.Spawner.SalonLampType.Random = @[Common.Spawner.Random]

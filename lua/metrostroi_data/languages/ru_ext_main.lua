@@ -17,6 +17,9 @@ Spawner.PresetManager.Title = Управление пресетами
 Spawner.PresetManager.NameColumn = Имя пресета
 Spawner.PresetManager.DeleteButton = Удалить
 
+# schemes
+Entities.gmod_subway_81-717_mvm_custom.Spawner.SchemesType.Name = Навигационные схемы
+
 # salon lamps
 Entities.gmod_subway_81-717_mvm_custom.Spawner.SalonLampType.Name = Лампы в салоне
 Entities.gmod_subway_81-717_mvm_custom.Spawner.SalonLampType.Random = @[Common.Spawner.Random]

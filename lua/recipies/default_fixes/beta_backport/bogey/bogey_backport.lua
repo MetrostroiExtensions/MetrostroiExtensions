@@ -329,7 +329,14 @@ function RECIPE:Inject(ent)
                 constraint.Weld(wagon, wheels, 0, 0, 0, 1, 0)
             end
 
-            if CPPI then wheels:CPPISetOwner(wagon:CPPIGetOwner() or wagon:GetNW2Entity("TrainEntity"):GetOwner()) end
+            -- Assign ownership
+
+            if CPPI and IsValid(wagon:CPPIGetOwner()) then
+                wheels:CPPISetOwner(wagon:CPPIGetOwner())
+            elseif CPPI and IsValid(wagon:GetNW2Entity("TrainEntity"):CPPIGetOwner()) then
+                wheels:CPPISetOwner(wagon:GetNW2Entity("TrainEntity"):CPPIGetOwner())
+            end
+
             wheels:SetNW2Entity("TrainBogey", wagon)
             wagon.Wheels = wheels
         end

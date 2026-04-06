@@ -20,9 +20,9 @@ local C_RenderDistance = GetConVar("metrostroi_renderdistance")
 local C_SoftDraw = GetConVar("metrostroi_softdrawmultipier")
 local C_ScreenshotMode = GetConVar("metrostroi_screenshotmode")
 local C_DrawDebug = GetConVar("metrostroi_drawdebug")
-local C_CabFOV              = GetConVar("metrostroi_cabfov")
+local C_CabFOV = GetConVar("metrostroi_cabfov")
 local C_CabZ = GetConVar("metrostroi_cabz")
-local C_FovDesired          = GetConVar("fov_desired")
+local C_FovDesired = GetConVar("fov_desired")
 -- local C_MinimizedShow       = GetConVar("metrostroi_minimizedshow")
 local C_Shadows1 = GetConVar("metrostroi_shadows1")
 local C_Shadows2 = GetConVar("metrostroi_shadows2")
@@ -32,7 +32,6 @@ local C_AA = GetConVar("mat_antialias")
 local C_Sprites = GetConVar("metrostroi_sprites")
 local C_DisableSeatShadows = GetConVar("metrostroi_disableseatshadows")
 function RECIPE:Init()
-
     hook.Remove("PopulateToolMenu", "Metrostroi cpanel")
     -- Build admin panel
     local function AdminPanel(panel)
@@ -1766,6 +1765,74 @@ function RECIPE:Inject(ent, entclass)
         local C_MaxWagons = GetConVar("metrostroi_maxwagons")
         local C_MaxTrains = GetConVar("metrostroi_maxtrains")
         local C_MaxTrainsOnPly = GetConVar("metrostroi_maxtrains_onplayer")
+        function ent.PostEntityPaste(wagon, ply, ent, createdEntities)
+            local BaseDupe = ent.EntityMods.BaseDupe
+            local Tbl = BaseDupe.Tbl
+            for k, v in pairs(Tbl) do
+                BaseDupe.Tbl[k][1] = createdEntities[BaseDupe.Tbl[k][1]] or nil
+                BaseDupe.Tbl[k][4] = createdEntities[BaseDupe.Tbl[k][4]] or nil
+            end
+
+            if IsValid(wagon.FrontBogey) and IsValid(BaseDupe.Tbl[1][1]) then wagon.FrontBogey:Remove() end
+            if IsValid(wagon.RearBogey) and IsValid(BaseDupe.Tbl[2][1]) then wagon.RearBogey:Remove() end
+            if IsValid(wagon.FrontJoin) and IsValid(BaseDupe.Tbl[1][4]) then wagon.FrontJoin:Remove() end
+            if IsValid(wagon.RearJoin) and IsValid(BaseDupe.Tbl[2][4]) then wagon.RearJoin:Remove() end
+            if IsValid(wagon.FrontBogey) and IsValid(wagon.RearBogey) and not wagon.IgnoreEngine then
+                for i = 1, #wagon.TrainEntities do
+                    if IsValid(wagon.TrainEntities[i]) and wagon.TrainEntities[i]:GetClass() == "gmod_train_bogey" then table.remove(wagon.TrainEntities, i) end
+                end
+            end
+
+            wagon.FrontBogey = Tbl[1][1] or nil
+            wagon.RearBogey = Tbl[2][1] or nil
+            for k, v in pairs(Tbl) do
+                if IsValid(v[1]) then
+                    v[1].NoPhysics = v[2] or nil
+                    -- Assign ownership
+                    if CPPI and IsValid(wagon:CPPIGetOwner()) then v[1]:CPPISetOwner(wagon:CPPIGetOwner()) end
+                    -- Some shared general information about the bogey
+                    wagon.SquealSound = wagon.SquealSound or math.floor(4 * math.random())
+                    wagon.SquealSensitivity = wagon.SquealSensitivity or math.random()
+                    v[1].SquealSensitivity = wagon.SquealSensitivity
+                    v[1]:SetNW2Int("SquealSound", wagon.SquealSound)
+                    v[1]:SetNW2Bool("IsForwardBogey", k == 1)
+                    v[1]:SetNW2Entity("TrainEntity", wagon)
+                    -- Constraint bogey to the train
+                    if wagon.NoPhysics then
+                        v[1]:SetParent(wagon)
+                    else
+                        constraint.Axis(v[1], wagon, 0, 0, Vector(0, 0, 0), Vector(0, 0, 0), 0, 0, 0, 1, Vector(0, 0, 1), false)
+                    end
+
+                    if wagon.SubwayTrain.Type == "Tatra" then v[1]:SetAngles(wagon:GetAngles() + Angle(0, (1 - k) * 180, 0)) end
+                    table.insert(wagon.TrainEntities, v[1])
+                end
+            end
+
+            wagon.Owner = ply
+        end
+
+        function ent.OnRemove(wagon)
+            -- Remove FailSim objects
+            for k, v in pairs(wagon.Systems) do
+                if FailSim.Objects[v] then FailSim.Objects[v] = nil end
+            end
+
+            -- Remove all linked objects
+            constraint.RemoveAll(wagon)
+            if wagon.TrainEntities then
+                for k, v in pairs(wagon.TrainEntities) do
+                    SafeRemoveEntity(v)
+                end
+            end
+
+            -- Deinitialize train
+            if Turbostroi then Turbostroi.DeinitializeTrain(wagon) end
+            SetGlobalInt("metrostroi_train_count", Metrostroi.TrainCount())
+            net.Start("MetrostroiTrainCount")
+            net.Broadcast()
+        end
+
         function ent.Initialize(wagon)
             wagon.Joints = {}
             wagon.JointPositions = {}
@@ -1780,7 +1847,11 @@ function RECIPE:Inject(ent, entclass)
 
             wagon:SetUseType(SIMPLE_USE)
             -- Prop-protection related
-            if CPPI and IsValid(wagon.Owner) then wagon:CPPISetOwner(wagon.Owner) end
+            if IsValid(wagon.Owner) then
+                wagon:SetOwner(wagon.Owner)
+                if CPPI then wagon:CPPISetOwner(wagon.Owner) end
+            end
+
             -- Entities that belong to train and must be cleaned up later
             wagon.TrainEntities = {}
             -- All the sitting positions in train
@@ -1937,6 +2008,157 @@ function RECIPE:Inject(ent, entclass)
                 if k ~= "BaseClass" then v(wagon) end
             end
         end
+
+        function ent.CreateBogey(wagon, pos, ang, forward, typ)
+            -- Create bogey entity
+            local bogey = ents.Create("gmod_train_bogey")
+            bogey:SetPos(wagon:LocalToWorld(pos))
+            bogey:SetAngles(wagon:GetAngles() + ang)
+            bogey.BogeyType = typ
+            bogey.NoPhysics = wagon.NoPhysics
+            bogey:Spawn()
+            -- Assign ownership
+            if CPPI and IsValid(wagon:CPPIGetOwner()) then bogey:CPPISetOwner(wagon:CPPIGetOwner()) end
+            -- Some shared general information about the bogey
+            wagon.SquealSound = wagon.SquealSound or math.floor(4 * math.random())
+            wagon.SquealSensitivity = wagon.SquealSensitivity or math.random()
+            bogey.SquealSensitivity = wagon.SquealSensitivity
+            bogey:SetNW2Int("SquealSound", wagon.SquealSound)
+            bogey:SetNW2Bool("IsForwardBogey", forward)
+            bogey:SetNW2Entity("TrainEntity", wagon)
+            bogey.SpawnPos = pos
+            bogey.SpawnAng = ang
+            local index = 1
+            for i, v in ipairs(wagon.JointPositions) do
+                if v > pos.x then
+                    index = i + 1
+                else
+                    break
+                end
+            end
+
+            table.insert(wagon.JointPositions, index, pos.x + 53.6)
+            table.insert(wagon.JointPositions, index + 1, pos.x - 53.6)
+            -- Constraint bogey to the train
+            if wagon.NoPhysics then
+                bogey:SetParent(wagon)
+            else
+                constraint.Axis(bogey, wagon, 0, 0, Vector(0, 0, 0), Vector(0, 0, 0), 0, 0, 0, 1, Vector(0, 0, 1), false)
+                if forward and IsValid(wagon.FrontCouple) then
+                    constraint.NoCollide(bogey, wagon.FrontCouple, 0, 0)
+                elseif not forward and IsValid(wagon.RearCouple) then
+                    constraint.NoCollide(bogeywagon.RearCouple, 0, 0)
+                end
+            end
+
+            -- Add to cleanup list
+            table.insert(wagon.TrainEntities, bogey)
+            return bogey
+        end
+
+        function ent.AddLightSensor(wagon, pos,ang,model)
+            local sensor = ents.Create("gmod_train_autodrive_coil")
+            if CPPI and IsValid(wagon:CPPIGetOwner()) then sensor:CPPISetOwner(wagon:CPPIGetOwner()) end
+            sensor:SetPos(wagon:LocalToWorld(pos))
+            sensor:SetAngles(wagon:LocalToWorldAngles(ang))
+            sensor:SetParent(wagon)
+            sensor.Model = model or "models/props_c17/display_cooler01a.mdl"
+            sensor.IsSensor = true
+            sensor.Train = wagon
+            sensor:Spawn()
+            return sensor
+        end
+        function ent.AddAutodriveCoil(wagon, bogey,right)
+            -- Create bogey entity
+            local coil = right and bogey.CoilR or not right and bogey.CoilL
+            if not IsValid(coil) then
+                coil = ents.Create("gmod_train_autodrive_coil")
+                coil:Spawn()
+                if right then
+                    bogey.CoilR = coil
+                else
+                    bogey.CoilL = coil
+                end
+            -- Assign ownership
+                if CPPI and IsValid(wagon:CPPIGetOwner()) then coil:CPPISetOwner(wagon:CPPIGetOwner()) end
+            end
+            if right then
+                coil:SetPos(bogey:LocalToWorld(Vector(-54,70,-30)))
+            else
+                coil:SetPos(bogey:LocalToWorld(Vector(-54,-70,-30)))
+            end
+            coil:SetAngles(bogey:GetAngles())
+
+            coil:SetParent(bogey)
+
+            return coil
+        end
+
+        function ent.CreateCouple(wagon, pos,ang,forward,typ)
+            -- Create bogey entity
+            local coupler = ents.Create("gmod_train_couple")
+            coupler:SetPos(wagon:LocalToWorld(pos))
+            coupler:SetAngles(wagon:GetAngles() + ang)
+            coupler.CoupleType = typ
+            coupler:Spawn()
+
+            -- Assign ownership
+            if CPPI and IsValid(wagon:CPPIGetOwner()) then coupler:CPPISetOwner(wagon:CPPIGetOwner()) end
+
+            -- Some shared general information about the bogey
+            coupler:SetNW2Bool("IsForwardCoupler", forward)
+            coupler:SetNW2Entity("TrainEntity", wagon)
+            coupler.SpawnPos = pos
+            coupler.SpawnAng = ang
+            local index=1
+            local x = wagon:WorldToLocal(coupler:LocalToWorld(coupler.CouplingPointOffset)).x
+            for i,v in ipairs(wagon.JointPositions) do
+                if v>pos.x then index=i+1 else break end
+            end
+            table.insert(wagon.JointPositions,index,x)
+            -- Constraint bogey to the train
+            if wagon.NoPhysics then
+                coupler:SetParent(wagon)
+            else
+                constraint.AdvBallsocket(
+                    wagon,
+                    coupler,
+                    0, --bone
+                    0, --bone
+                    pos,
+                    Vector(0,0,0),
+                    1, --forcelimit
+                    1, --torquelimit
+                    -2, --xmin
+                    -2, --ymin
+                    -15, --zmin
+                    2, --xmax
+                    2, --ymax
+                    15, --zmax
+                    0.1, --xfric
+                    0.1, --yfric
+                    1, --zfric
+                    0, --rotonly
+                    1 --nocollide
+                )
+
+                if forward and IsValid(wagon.FrontBogey) then
+                    constraint.NoCollide(wagon.FrontBogey,coupler,0,0)
+                elseif not forward and IsValid(wagon.RearBogey) then
+                    constraint.NoCollide(wagon.RearBogey,coupler,0,0)
+                end
+                --[[
+                constraint.Axis(coupler,wagon,0,0,
+                    Vector(0,0,0),Vector(0,0,0),
+                    0,0,0,1,Vector(0,0,1),false)]]
+            end
+
+            -- Add to cleanup list
+            table.insert(wagon.TrainEntities,coupler)
+            return coupler
+        end
+
+
 
         function ent.ElectricConnected(wagon, train, isRear)
             if not IsValid(train) then return end
