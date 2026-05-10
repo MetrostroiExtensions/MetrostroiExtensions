@@ -17,6 +17,7 @@ if SERVER then
     AddCSLuaFile("metrostroi/extensions/constants/language_id.lua")
     AddCSLuaFile("metrostroi/extensions/constants/spawner.lua")
 end
+
 if not MetrostroiExtensionsLib then MetrostroiExtensionsLib = {} end
 MEL = MetrostroiExtensionsLib -- alias. 23 symbols vs 3. and we name it MetrostroiExtensionLib because there is fly's old Metrostroi Extensions.
 local MEL_DEBUG_CONVAR = CreateConVar("metrostroi_ext_debug", 0, {FCVAR_ARCHIVE, FCVAR_REPLICATED,}, "Metrostroi Extensions Debug mode status. See https://metrostroiextensions.github.io/MetrostroiExtensions/recipe_basics/#debug- for more info.", 0, 1)
@@ -44,9 +45,7 @@ MEL.FirstTimeInject = true -- temp global variable
 MEL.EntTables = {}
 MEL.MetrostroiClasses = {}
 MEL.TrainClasses = {}
-
 local backportsNeeded = Metrostroi.Version <= 1537278077
-
 local LOG_PREFIX = "[MetrostroiExtensionsLib] "
 local WARNING_COLOR = Color(255, 255, 0)
 local DEBUG_COLOR = Color(255, 0, 191)
@@ -185,7 +184,7 @@ local function findRecipeFiles(folder, recipe_files)
 end
 
 local function isRecipeEnabled(recipe_class_name)
- return GetConVar("metrostroi_ext_" .. recipe_class_name):GetBool()
+    return GetConVar("metrostroi_ext_" .. recipe_class_name):GetBool()
 end
 
 local function initRecipe(recipe)
@@ -261,9 +260,7 @@ local function loadRecipe(filename)
 
     MEL.Recipes[RECIPE.ClassName][RECIPE.Scope] = RECIPE
     -- initialize recipe
-    if (RECIPE.BackportPriority and backportsNeeded) or not RECIPE.BackportPriority then
-        initRecipe(RECIPE)
-    end
+    if RECIPE.BackportPriority and backportsNeeded or not RECIPE.BackportPriority then initRecipe(RECIPE) end
     RECIPE = nil
 end
 
@@ -415,7 +412,6 @@ local function injectFunction(key, tbl)
 
         if not MEL.FunctionDefaults[key] then MEL.FunctionDefaults[key] = {} end
         if not MEL.FunctionDefaults[key][functionName] then MEL.FunctionDefaults[key][functionName] = tbl[functionName] end
-
         local targetFunction = MEL.FunctionDefaults[key][functionName]
         -- PERFORMANCE: before we used unpack and varargs, but they doesn't play nicely with JIT. So this hacky thing is best that i can think of to fix it.
         local buildedInject = function(wagon, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8)
@@ -423,7 +419,10 @@ local function injectFunction(key, tbl)
                 local level = beforeStack[i]
                 for j = 1, #level do
                     local fn = level[j]
-                    local rets = {fn(wagon, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8)}  -- unavoidable allocation :(
+                    local rets = {
+                        fn(wagon, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8) -- unavoidable allocation :(
+                    }
+
                     local n = #rets
                     if n > 0 and rets[n] == MEL.Return then
                         -- Return all but last
@@ -447,7 +446,6 @@ local function injectFunction(key, tbl)
             end
 
             local returnValue = targetFunction(wagon, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8)
-
             for i = 1, #afterStack do
                 local level = afterStack[i]
                 for j = 1, #level do
@@ -476,6 +474,11 @@ local function injectFunction(key, tbl)
 
         builedInjects[functionName] = buildedInject
         tbl[functionName] = buildedInject
+        -- regenerate buttonmap props
+        if CLIENT and key ~= "gmod_subway_base" then
+            Metrostroi.GenerateClientProps(tbl)
+            MEL._reloadButtonMapProps(tbl)
+        end
     end
 
     if string.StartsWith(key, "sys_") then return end
@@ -497,6 +500,12 @@ local function injectFunction(key, tbl)
                         func(ent)
                     end
                 end
+            end
+
+            -- regenerate buttonmap props
+            if key ~= "gmod_subway_base" then
+                Metrostroi.GenerateClientProps(ent)
+                MEL._reloadButtonMapProps(ent)
             end
         end
     end
@@ -603,7 +612,6 @@ end
 -- we want to do this as soon as possible, so we would save old element values from original Metrostroi
 MEL._populateSpawnerFieldMappings()
 MEL.ReplaceLoadLanguage()
-
 discoverRecipies()
 -- injection logic
 hook.Add("InitPostEntity", "MetrostroiExtensionsLibInject", function()

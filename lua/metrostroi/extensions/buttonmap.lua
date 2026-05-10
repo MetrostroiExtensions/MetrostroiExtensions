@@ -12,25 +12,39 @@
 --
 -- You should have received a copy of the GNU Affero General Public License
 -- along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
 MEL.HidePanelOverrides = {} -- table with HidePanel value overrides
 -- (key: ent_class, value: (key: panel name, value: function to get value))
-function reloadButtonMapProps(ent, buttonmap)
-    if not buttonmap.props then return end
-    for i, prop in pairs(buttonmap.props) do
-        if ent.ClientEnts and IsValid(ent.ClientEnts[prop]) then
-            ent.ClientEnts[prop]:Remove()
-            ent.ClientEnts[prop] = nil
+MEL._UpdatedButtonmaps = {} -- buttonmaps which props we need to respawn after reinject
+function MEL._reloadButtonMapProps(ent)
+    local ent_class = MEL.GetEntclass(ent)
+    if not MEL._UpdatedButtonmaps[ent_class] then return end
+    for _, buttonmap_name in pairs(MEL._UpdatedButtonmaps[ent_class]) do
+        local buttonmap = ent.ButtonMap and ent.ButtonMap[buttonmap_name] or nil
+        if not buttonmap then
+            MEL._LogWarning(Format("_reloadButtonMapProps: no such ButtonMap %s at %s", buttonmap_name, key))
+            return
+        end
+
+        if not buttonmap.props then return end
+        for i, prop in pairs(buttonmap.props) do
+            if ent.ClientEnts and IsValid(ent.ClientEnts[prop]) then
+                ent.ClientEnts[prop]:Remove()
+                ent.ClientEnts[prop] = nil
+            end
         end
     end
+end
+
+local function _markButtonMapForReload(ent, buttonmap_name)
+    local ent_class = MEL.GetEntclass(ent)
+    if not MEL._UpdatedButtonmaps[ent_class] then MEL._UpdatedButtonmaps[ent_class] = {} end
+    table.insert(MEL._UpdatedButtonmaps[ent_class], buttonmap_name)
 end
 
 function MEL.AddToSyncTable(ent, sync_key)
     if SERVER then
         local ent_class = MEL.GetEntclass(ent)
-        if not MEL.SyncTableHashed[ent_class][sync_key] then
-            table.insert(ent.SyncTable, sync_key)
-        end
+        if not MEL.SyncTableHashed[ent_class][sync_key] then table.insert(ent.SyncTable, sync_key) end
     end
 end
 
@@ -47,15 +61,11 @@ function MEL.ModifyButtonMap(ent, buttonmap_name, buttonmap_callback, button_cal
         for i, button in pairs(buttonmap.buttons) do
             if not ent.ButtonMapCopy[buttonmap_name].buttons[i] then continue end
 
-            if ent.ButtonMapCopy[buttonmap_name].buttons[i].model then
-                button.model = table.Copy(ent.ButtonMapCopy[buttonmap_name].buttons[i].model)
-            end
-
+            if not button.model and ent.ButtonMapCopy[buttonmap_name].buttons[i].model then button.model = table.Copy(ent.ButtonMapCopy[buttonmap_name].buttons[i].model) end
             if button_callback then button_callback(button, table.Copy(ent.ButtonMapCopy[buttonmap_name].buttons[i])) end
         end
 
-        Metrostroi.GenerateClientProps(ent)
-        reloadButtonMapProps(ent, buttonmap)
+        _markButtonMapForReload(ent, buttonmap_name)
     end
 end
 
@@ -87,8 +97,7 @@ function MEL.MoveButtonMapButton(ent, buttonmap_name, button_name, x, y)
         end
 
         buttonmap.buttons[button_index].model = table.Copy(ent.ButtonMapCopy[buttonmap_name].buttons[button_index].model)
-        Metrostroi.GenerateClientProps(ent)
-        reloadButtonMapProps(ent, buttonmap)
+        _markButtonMapForReload(ent, buttonmap_name)
     end
 end
 
@@ -101,8 +110,7 @@ function MEL.NewButtonMap(ent, buttonmap_name, buttonmap_data, do_not_override)
 
         ent.ButtonMap[buttonmap_name] = buttonmap_data
         ent.ButtonMapCopy[buttonmap_name] = table.Copy(buttonmap_data)
-        Metrostroi.GenerateClientProps(ent)
-        reloadButtonMapProps(ent, ent.ButtonMap[buttonmap_name])
+        _markButtonMapForReload(ent, buttonmap_name)
     end
 end
 
@@ -129,8 +137,7 @@ function MEL.NewButtonMapButton(ent, buttonmap_name, button_data)
             table.insert(buttonmap_copy.buttons, table.Copy(button_data))
         end
 
-        Metrostroi.GenerateClientProps(ent)
-        reloadButtonMapProps(ent, buttonmap)
+        _markButtonMapForReload(ent, buttonmap_name)
     end
 end
 
