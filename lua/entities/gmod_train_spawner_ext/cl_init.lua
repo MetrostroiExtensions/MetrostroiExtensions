@@ -416,12 +416,16 @@ local function entityTypeCallback(self, index, value)
 	timer.Simple(0, function() panelRegistry.rootFrame:SetTall(panelRegistry.rootFrame:GetTall() + 1) end)
 end
 
-local function updateWagonCount(numSlider)
+local function updateWagonCountSliderRange(numSlider, maxValue)
 	-- sometimes SetMax is not present while numSlider is... weird
 	if numSlider and numSlider.SetMax then
-		numSlider:SetMax(MaxWagonsOnPlayer)
-		numSlider:SetValue(math.Clamp(numSlider:GetValue(), 1, MaxWagonsOnPlayer))
+		numSlider:SetMax(maxValue)
+		numSlider:SetValue(math.Clamp(numSlider:GetValue(), 1, maxValue))
 	end
+end
+
+local function getMaxWagonsCount()
+	return GetGlobalInt("metrostroi_maxtrains_onplayer") * GetGlobalInt("metrostroi_maxwagons")
 end
 
 local function drawSidebar(frame)
@@ -459,8 +463,15 @@ local function drawSidebar(frame)
 	panelRegistry.wagonCount:Dock(TOP)
 	panelRegistry.wagonCount:SetDecimals(0)
 	panelRegistry.wagonCount:SetMin(1)
-	updateWagonCount(panelRegistry.wagonCount)
-	panelRegistry.wagonCount:SetValue(math.Clamp(panelRegistry.rootFrame:GetCookie("wagonCount", 2), 1, MaxWagonsOnPlayer))
+
+	local maxWagonsOnPlayer = getMaxWagonsCount()
+
+	if maxWagonsOnPlayer then 
+		updateWagonCountSliderRange(panelRegistry.wagonCount, maxWagonsOnPlayer)
+		panelRegistry.wagonCount:SetValue(math.Clamp(panelRegistry.rootFrame:GetCookie("wagonCount", 2), 1, maxWagonsOnPlayer))
+	else
+		print("maxWagonsOnPlayer was nil. Bug?")
+	end
 	-- WARNING: HACKS AHEAD!
 	-- We don't need label here, cause we got it on top as wagonCountLabel. Can we reuse this label? probably.
 	panelRegistry.wagonCount.Label:SetSize(0, 0)
@@ -610,9 +621,12 @@ end
 
 net.Receive("MetrostroiTrainSpawner", createRootFrame)
 net.Receive("MetrostroiMaxWagons", function()
-	-- TODO: i hate this logic... seems very wrong
-	MaxWagonsOnPlayer = GetGlobalInt("metrostroi_maxtrains_onplayer") * GetGlobalInt("metrostroi_maxwagons")
-	updateWagonCount(panelRegistry.wagonCount)
+	local maxWagonsOnPlayer = getMaxWagonsCount()
+	
+	if not maxWagonsOnPlayer then 
+		print("maxWagonsOnPlayer was nil. Bug?")
+		return
+	end
+
+	updateWagonCountSliderRange(panelRegistry.wagonCount, maxWagonsOnPlayer)
 end)
--- TODO: should we even do anything on this train count update?
--- net.Receive("MetrostroiTrainCount", function() if trainTypeT and trainTypeT:IsValid() then trainTypeT:SetText(Format("%s(%d/%d)\n%s:%d", Metrostroi.GetPhrase("Spawner.Trains1"), GetGlobalInt("metrostroi_train_count"), MaxWagons, Metrostroi.GetPhrase("Spawner.Trains2"), MaxWagonsOnPlayer)) end end)
