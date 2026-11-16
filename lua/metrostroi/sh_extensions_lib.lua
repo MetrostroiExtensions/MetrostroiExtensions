@@ -117,6 +117,8 @@ for _, moduleName in pairs(methodModules) do
     end
 end
 
+MEL.ApplyBackports()
+
 function MEL.GetEntsByTrainType(trainType)
     if not trainType then
         MEL._LogError("trainType in GetEntsByTrainType is nil! Check your recipies.")
@@ -644,6 +646,7 @@ if SERVER then
 
         net.Start("MetrostroiExtDoReload")
         net.Broadcast()
+        MEL.ApplyBackports()
         MEL._LogInfo(Format("(%s) reloading recipies...", string.FormattedTime(CurTime(), "%02i:%02i:%02i")))
         -- clear all inject stacks
         MEL.FunctionInjectStack = {}
@@ -665,6 +668,7 @@ end
 if CLIENT then
     net.Receive("MetrostroiExtDoReload", function(len, ply)
         MEL._LogInfo(Format("(%s) reloading recipies...", string.FormattedTime(CurTime(), "%02i:%02i:%02i")))
+        MEL.ApplyBackports()
         -- clear all inject stacks
         MEL.FunctionInjectStack = {}
         MEL.BaseRecipies = {}
