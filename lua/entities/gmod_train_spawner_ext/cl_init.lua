@@ -393,13 +393,12 @@ function drawPresets()
 	panelRegistry.presetsManageMenu:SetIcon("icon16/cog_edit.png")
 end
 
-local function updateWagonCountSliderRange(numSlider, trainClass)
+local function updateWagonCountSliderRange(numSlider)
 	if not numSlider or not numSlider.SetMax then return end
 
-	local minWagons, maxWagons = hook.Run("Metrostroi.Spawner.GetWagonCountSettings", trainClass)
+	local minWagons = 2
 	local maxWagonsPerTrain = math.max(GetGlobalInt("metrostroi_maxwagons"), 1)
-	minWagons = minWagons or 2
-	maxWagons = math.min(maxWagons or maxWagonsPerTrain, maxWagonsPerTrain)
+	local maxWagons = maxWagonsPerTrain
 	if minWagons >= maxWagons then minWagons = maxWagons end
 
 	numSlider:SetMin(minWagons)
@@ -416,7 +415,7 @@ local function entityTypeCallback(self, index, value)
 	-- try to load saved settings
 	local savedSettings = utils.preset.loadLatest(currentSettings.entityClass)
 	if savedSettings then currentSettings = savedSettings end
-	updateWagonCountSliderRange(panelRegistry.wagonCount, currentSettings.entityClass)
+	updateWagonCountSliderRange(panelRegistry.wagonCount)
 	-- if this is custom entity we should use spawnmenu image of original entity
 	local image = string.format("vgui/entities/%s", currentSettings.entityClass)
 	image = string.Replace(image, "_custom", "")
@@ -471,7 +470,7 @@ local function drawSidebar(frame)
 	panelRegistry.wagonCount:Dock(TOP)
 	panelRegistry.wagonCount:SetDecimals(0)
 
-	local minWagons, maxWagons = updateWagonCountSliderRange(panelRegistry.wagonCount, currentSettings.entityClass)
+	local minWagons, maxWagons = updateWagonCountSliderRange(panelRegistry.wagonCount)
 	panelRegistry.wagonCount:SetValue(math.Clamp(panelRegistry.rootFrame:GetCookie("wagonCount", 2), minWagons, maxWagons ))
 	-- WARNING: HACKS AHEAD!
 	-- We don't need label here, cause we got it on top as wagonCountLabel. Can we reuse this label? probably.
@@ -622,5 +621,5 @@ end
 
 net.Receive("MetrostroiTrainSpawner", createRootFrame)
 net.Receive("MetrostroiMaxWagons", function()
-	updateWagonCountSliderRange(panelRegistry.wagonCount, currentSettings.entityClass)
+	updateWagonCountSliderRange(panelRegistry.wagonCount)
 end)
