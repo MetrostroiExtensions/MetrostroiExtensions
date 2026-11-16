@@ -102,15 +102,17 @@ end
 local function getEntityTypes()
 	for i, class in pairs(MEL.TrainClasses) do
 		local entityTable = MEL.getEntTable(class)
-		if not entityTable.Spawner or not entityTable.SubwayTrain then continue end
+		if not entityTable.Spawner then continue end
 		local entityList = list.Get("SpawnableEntities")[class]
 		local displayName = nil
 		if entityList then
 			displayName = entityList.PrintName
 		elseif entityTable.Spawner and entityTable.Spawner.Name then
 			displayName = entityTable.Spawner.Name
-		else
+		elseif entityTable.SubwayTrain and entityTable.SubwayTrain.Name and entityTable.SubwayTrain.Manufacturer then
 			displayName = string.format("%s (%s)", entityTable.SubwayTrain.Name, entityTable.SubwayTrain.Manufacturer)
+		else
+			displayName = class
 		end
 
 		entityTypes[class] = displayName
@@ -391,6 +393,20 @@ function drawPresets()
 	panelRegistry.presetsManageMenu:SetIcon("icon16/cog_edit.png")
 end
 
+local function updateWagonCountSliderRange(numSlider)
+	if not numSlider or not numSlider.SetMax then return end
+
+	local minWagons = 2
+	local maxWagonsPerTrain = math.max(GetGlobalInt("metrostroi_maxwagons"), 1)
+	local maxWagons = maxWagonsPerTrain
+	if minWagons >= maxWagons then minWagons = maxWagons end
+
+	numSlider:SetMin(minWagons)
+	numSlider:SetMax(maxWagons)
+	numSlider:SetValue(math.Clamp(numSlider:GetValue(), minWagons, maxWagons))
+	return minWagons, maxWagons
+end
+
 local function entityTypeCallback(self, index, value)
 	if currentSettings.entityClass then saveLatestSettings() end
 	currentSettings.entityClass = self:GetOptionData(index)
@@ -399,6 +415,7 @@ local function entityTypeCallback(self, index, value)
 	-- try to load saved settings
 	local savedSettings = utils.preset.loadLatest(currentSettings.entityClass)
 	if savedSettings then currentSettings = savedSettings end
+	updateWagonCountSliderRange(panelRegistry.wagonCount)
 	-- if this is custom entity we should use spawnmenu image of original entity
 	local image = string.format("vgui/entities/%s", currentSettings.entityClass)
 	image = string.Replace(image, "_custom", "")
@@ -414,18 +431,6 @@ local function entityTypeCallback(self, index, value)
 	-- do not even ask why that works and why IconLayout doesn't want to work right without this
 	panelRegistry.rootFrame:SetTall(panelRegistry.rootFrame:GetTall() - 1)
 	timer.Simple(0, function() panelRegistry.rootFrame:SetTall(panelRegistry.rootFrame:GetTall() + 1) end)
-end
-
-local function updateWagonCountSliderRange(numSlider, maxValue)
-	-- sometimes SetMax is not present while numSlider is... weird
-	if numSlider and numSlider.SetMax then
-		numSlider:SetMax(maxValue)
-		numSlider:SetValue(math.Clamp(numSlider:GetValue(), 1, maxValue))
-	end
-end
-
-local function getMaxWagonsCount()
-	return GetGlobalInt("metrostroi_maxtrains_onplayer") * GetGlobalInt("metrostroi_maxwagons")
 end
 
 local function drawSidebar(frame)
@@ -450,6 +455,8 @@ local function drawSidebar(frame)
 	panelRegistry.entityTypeComboBox:SetTextColor()
 	local counter = 1
 	for entityType, displayName in pairs(entityTypes) do
+		if hook.Run("Metrostroi.Spawner.RestrictTypeOnClient", entityType) then continue end
+
 		entityTypesIndexes[entityType] = counter
 		panelRegistry.entityTypeComboBox:AddChoice(displayName, entityType)
 		counter = counter + 1
@@ -462,16 +469,9 @@ local function drawSidebar(frame)
 	panelRegistry.wagonCount = vgui.Create("DNumSlider", wagonCountPanel)
 	panelRegistry.wagonCount:Dock(TOP)
 	panelRegistry.wagonCount:SetDecimals(0)
-	panelRegistry.wagonCount:SetMin(1)
 
-	local maxWagonsOnPlayer = getMaxWagonsCount()
-
-	if maxWagonsOnPlayer then 
-		updateWagonCountSliderRange(panelRegistry.wagonCount, maxWagonsOnPlayer)
-		panelRegistry.wagonCount:SetValue(math.Clamp(panelRegistry.rootFrame:GetCookie("wagonCount", 2), 1, maxWagonsOnPlayer))
-	else
-		print("maxWagonsOnPlayer was nil. Bug?")
-	end
+	local minWagons, maxWagons = updateWagonCountSliderRange(panelRegistry.wagonCount)
+	panelRegistry.wagonCount:SetValue(math.Clamp(panelRegistry.rootFrame:GetCookie("wagonCount", 2), minWagons, maxWagons ))
 	-- WARNING: HACKS AHEAD!
 	-- We don't need label here, cause we got it on top as wagonCountLabel. Can we reuse this label? probably.
 	panelRegistry.wagonCount.Label:SetSize(0, 0)
@@ -621,12 +621,5 @@ end
 
 net.Receive("MetrostroiTrainSpawner", createRootFrame)
 net.Receive("MetrostroiMaxWagons", function()
-	local maxWagonsOnPlayer = getMaxWagonsCount()
-	
-	if not maxWagonsOnPlayer then 
-		print("maxWagonsOnPlayer was nil. Bug?")
-		return
-	end
-
-	updateWagonCountSliderRange(panelRegistry.wagonCount, maxWagonsOnPlayer)
+	updateWagonCountSliderRange(panelRegistry.wagonCount)
 end)

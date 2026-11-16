@@ -151,38 +151,29 @@ function MEL._populateSpawnerFieldMappings()
     for _, train_class in pairs(MEL.TrainClasses) do
         local ent_table = MEL.getEntTable(train_class)
         if not ent_table.Spawner then continue end
-        if not MEL.SpawnerFieldMappings[train_class] then MEL.SpawnerFieldMappings[train_class] = {} end
-        local updated_fields = {}
+        local previous_mappings = MEL.SpawnerFieldMappings[train_class] or {}
+        local current_mappings = {}
+        MEL.SpawnerFieldMappings[train_class] = current_mappings
         for field_i, field in pairs(ent_table.Spawner) do
             field = MEL.Helpers.SpawnerEnsureNamedFormat(field)
             if istable(field) and isstring(field.Name) then
                 local field_name = field.Name
-                updated_fields[field_name] = true
-                if MEL.SpawnerFieldMappings[train_class][field_name] then
-                    MEL.SpawnerFieldMappings[train_class][field_name].index = field_i
-                else
-                    MEL.SpawnerFieldMappings[train_class][field_name] = {
-                        index = field_i,
-                        list_elements = {},
-                        list_elements_indexed = {}
-                    }
-                end
+                local previous_mapping = previous_mappings[field_name]
+                local field_mapping = {
+                    index = field_i,
+                    list_elements = previous_mapping and table.Copy(previous_mapping.list_elements) or {},
+                    list_elements_indexed = previous_mapping and table.Copy(previous_mapping.list_elements_indexed) or {}
+                }
+                current_mappings[field_name] = field_mapping
 
                 if field.Type == SpawnerC.TYPE_LIST and istable(field.Elements) then
                     for list_i, name in pairs(field.Elements) do
-                        if not MEL.SpawnerFieldMappings[train_class][field_name].list_elements[name] then MEL.SpawnerFieldMappings[train_class][field_name].list_elements[name] = list_i end
-                        if not MEL.SpawnerFieldMappings[train_class][field_name].list_elements_indexed[list_i] then MEL.SpawnerFieldMappings[train_class][field_name].list_elements_indexed[list_i] = name end
+                        if not field_mapping.list_elements[name] then field_mapping.list_elements[name] = list_i end
+                        if not field_mapping.list_elements_indexed[list_i] then field_mapping.list_elements_indexed[list_i] = name end
                     end
                 end
             end
         end
-        -- FIXME: hack to delete field from mapping that was deleted somewhere else... seems so wrong, but it works soooo :)
-        -- REALLY FIXME: it broke something... lol
-        -- for field_name, _ in pairs(MEL.SpawnerFieldMappings[train_class]) do
-        --     if not updated_fields[field_name] then
-        --         MEL.SpawnerFieldMappings[train_class] = nil
-        --     end
-        -- end
     end
 end
 

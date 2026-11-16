@@ -284,7 +284,10 @@ local function newGenerateClientProps()
                         }
 
                         if lconfig.anim then
-                            local i = addAutoAnim(wagon, lname, function(ent) ent:AnimateFrom(lname, name) end)
+                            -- Keep lamp movement separate from the sprite callback below.
+                            -- Both callbacks use lname as their visible/client-prop name,
+                            -- but they must not share an AutoAnimIndexes key.
+                            local i = addAutoAnim(wagon, "__lamp_move:" .. lname, function(ent) ent:AnimateFrom(lname, name) end)
                             wagon.AutoAnimNames[i] = lname
                         end
 
@@ -414,7 +417,7 @@ local function newGenerateClientProps()
                         local i
                         if sconfig.getfunc then
                             local func = sconfig.getfunc
-                            i = addAutoAnim(wagon, hideName, function(ent)
+                            i = addAutoAnim(wagon, "__sprite:" .. sname, function(ent)
                                 local val = func(ent)
                                 ent:SetLightPower(name, not ent.Hidden[hideName] and val > 0, val)
                             end)
@@ -423,20 +426,20 @@ local function newGenerateClientProps()
                             --reti = reti + 1
                             local var, animvar = sconfig.var, name .. "_sanim"
                             local speed = sconfig.speed or 10
-                            i = addAutoAnim(wagon, hideName, function(ent)
+                            i = addAutoAnim(wagon, "__sprite:" .. sname, function(ent)
                                 local val = ent:Animate(animvar, ent:GetPackedBool(var) and 1 or 0, 0, 1, speed, false)
                                 ent:SetLightPower(name, val > 0, val)
                             end)
                         elseif sconfig.lamp then
                             local lightName = sconfig.lamp
-                            i = addAutoAnim(wagon, hideName, function(ent)
+                            i = addAutoAnim(wagon, "__sprite:" .. sname, function(ent)
                                 local val = ent.Anims[lightName] and ent.Anims[lightName].value or 0
                                 ent:SetLightPower(lightName, val > 0, val)
                             end)
                         elseif config.lamp and config.lamp.var then
                             local lname = name .. "_lamp"
                             local lightName = lname .. "_anim"
-                            i = addAutoAnim(wagon, hideName, function(ent)
+                            i = addAutoAnim(wagon, "__sprite:" .. sname, function(ent)
                                 local val = ent.Anims[lightName] and ent.Anims[lightName].value or 0
                                 ent:SetLightPower(name, val > 0, val)
                             end)

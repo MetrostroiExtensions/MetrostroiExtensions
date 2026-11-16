@@ -11,7 +11,7 @@ function PANEL:Init()
 	self.ComboBox = vgui.Create("DComboBox", self)
 	self.ComboBox:Dock(TOP)
 	self.ComboBox:SetSize(0, 30)
-	self.ComboBox:SetSortItems(false)
+	self.ComboBox:SetSortItems(true)
 end
 
 function PANEL:SetText(text)

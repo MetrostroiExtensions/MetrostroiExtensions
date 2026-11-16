@@ -21,13 +21,8 @@ function RECIPE:Inject(ent)
         wagon:SetNW2Bool("KVR", isKVR)
         wagon:SetNW2Bool("Dot5", isKVR)
         local type_ = wagon:GetNW2Int("Type")
-        local passtex = "Def_717SPBWhite"
-        local cabtex = "Def_PUAV"
         local seats = false
-        local num = wagon.WagonNumber
         if type_ == 1 then --PAKSDM
-            passtex = isKVR and (num <= 8888 and "Def_717SPBWhite" or num < 10000 and "Def_717SPBWood3" or "Def_717SPBCyan") or "Def_717SPBWhite"
-            cabtex = isKVR and "Def_PAKSD2" or "Def_PAKSD"
             if wagon.UPO then  -- why UPO is nil?
                 if isKVR then
                     wagon.UPO.Buzz = math.random() > 0.7 and 2 or math.random() > 0.7 and 1
@@ -44,8 +39,6 @@ function RECIPE:Inject(ent)
 
         -- wagon:SetNW2Int("Crane", isKVR and 1 or 0)
         wagon:SetNW2Bool("NewSeats", isKVR or seats)
-        wagon:SetNW2String("PassTexture", passtex)
-        wagon:SetNW2String("CabTexture", cabtex)
         wagon:SetNW2Bool("NewSeats", isKVR or seats)
         wagon:UpdateTextures()
         wagon:UpdateLampsColors()
