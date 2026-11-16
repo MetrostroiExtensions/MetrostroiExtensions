@@ -32,15 +32,15 @@ function RECIPE:Inject(ent, entclass)
         local speed = wagon:GetSpeed()
         -- Engine sound
         local motorPower = wagon:GetMotorPower() * (1 + math.max(0, (speed - 55) / 35) * 0.4)
-        if wagon.MotorSoundType ~= wagon:GetNWInt("MotorSoundType", 1) or wagon.DisableEngines ~= wagon:GetNWBool("DisableEngines") then
+        if wagon.MotorSoundType ~= wagon:GetNWInt("MotorSoundType", 1) or wagon.DisableEngines ~= wagon:GetNWBool("DisableEngines") or not wagon:GetNWBool("DisableEngines") and not wagon.MotorSoundArr then
             if wagon.MotorSoundType then
                 -- берем говнокод у лучших
-                wagon.MotorSoundArr = wagon.EngineSNDConfig[wagon.MotorSoundType + 1]
-                if not istable(wagon.MotorSoundArr[1]) then
+                wagon.MotorSoundArr = wagon.EngineSNDConfig and wagon.EngineSNDConfig[wagon.MotorSoundType + 1]
+                if wagon.MotorSoundArr and not istable(wagon.MotorSoundArr[1]) then
                     -- then it have old format
                     wagon.MotorSoundArr = wagon.EngineSNDConfig
                 end
-                for _, snd in ipairs(wagon.MotorSoundArr) do
+                for _, snd in ipairs(wagon.MotorSoundArr or {}) do
                     local soundname = snd
                     if istable(snd) then soundname = snd[1] end
                     wagon:SetSoundState(soundname, 0, 0)
@@ -49,8 +49,8 @@ function RECIPE:Inject(ent, entclass)
 
             wagon.MotorSoundType = wagon:GetNWInt("MotorSoundType", 1)
             wagon.DisableEngines = wagon:GetNWBool("DisableEngines")
-            wagon.MotorSoundArr = wagon.EngineSNDConfig[wagon.MotorSoundType + 1]
-            if not istable(wagon.MotorSoundArr[1]) then
+            wagon.MotorSoundArr = not wagon.DisableEngines and wagon.EngineSNDConfig and wagon.EngineSNDConfig[wagon.MotorSoundType + 1]
+            if wagon.MotorSoundArr and not istable(wagon.MotorSoundArr[1]) then
                 -- then it have old format
                 wagon.MotorSoundArr = wagon.EngineSNDConfig
             end

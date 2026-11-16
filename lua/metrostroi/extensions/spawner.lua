@@ -126,7 +126,7 @@ function MEL.RemoveSpawnerField(ent_or_entclass, field_name)
     if not spawner then return end
     for i, field in pairs(spawner) do
         field = MEL.Helpers.SpawnerEnsureNamedFormat(field)
-        if istable(field) and field.Name == field_name then table.remove(spawner, i) end
+        if istable(field) and field.Name == field_name then spawner[i] = nil end
     end
 end
 

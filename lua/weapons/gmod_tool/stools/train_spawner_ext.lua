@@ -323,6 +323,12 @@ function TOOL:SpawnWagon(trace)
         ent:UpdateTextures()
         ent.FrontAutoCouple = i > 1 and i < self.Settings.wagonCount
         ent.RearAutoCouple = self.Settings.wagonCount > 1
+        if IsValid(ent.FrontCouple) then
+            ent.FrontCouple.TrainSpawnerCoupleFix = ent.FrontAutoCouple
+        end
+        if IsValid(ent.RearCouple) then
+            ent.RearCouple.TrainSpawnerCoupleFix = ent.RearAutoCouple
+        end
         LastEnt = ent
     end
 
@@ -339,6 +345,8 @@ function TOOL:SpawnWagon(trace)
             train.RearBogey.BrakeCylinderPressure = 3
             train.FrontBogey.MotorPower = 0
             train.RearBogey.MotorPower = 0
+            train.FrontCouple.TrainSpawnerCoupleFix = nil
+            train.RearCouple.TrainSpawnerCoupleFix = nil
             train.OnCoupled = nil
         end
 
@@ -462,12 +470,12 @@ function TOOL:LeftClick(trace)
         if self.Settings.wagonCount > C_MaxWagons:GetInt() then self.Settings.wagonCount = C_MaxWagons:GetInt() end
         if Metrostroi.TrainCountOnPlayer(self:GetOwner()) + self.Settings.wagonCount > GetConVar("metrostroi_maxtrains_onplayer"):GetInt() * C_MaxWagons:GetInt() or Metrostroi.TrainCount() + self.Settings.wagonCount > GetConVar("metrostroi_maxtrains"):GetInt() * C_MaxWagons:GetInt() then
             self:GetOwner():LimitHit("train_limit")
-            return true
+            return
         end
 
         if hook.Run("MetrostroiSpawnerRestrict", self:GetOwner(), self.Settings) then
             self:GetOwner():LimitHit("spawner_restrict")
-            return true
+            return
         end
     end
 

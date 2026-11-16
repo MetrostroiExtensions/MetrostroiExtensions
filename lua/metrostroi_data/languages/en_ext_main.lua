@@ -67,8 +67,10 @@ Entities.gmod_subway_81-717_lvz_custom.Spawner.WagonType.Random = @[Common.Spawn
 Entities.gmod_subway_81-717_lvz_custom.Spawner.SalonLampType.Name = @[Spawner.717.LampType]
 Entities.gmod_subway_81-717_lvz_custom.Spawner.SalonLampType.Random = @[Common.Spawner.Random]
 
-Entities.gmod_subway_81-717_lvz_custom.Spawner.SeatType.Name = @[Spawner.717.SeatType] #FIXME
-Entities.gmod_subway_81-717_lvz_custom.Spawner.SeatType.Random = @[Common.Spawner.Random] #FIXME
+Entities.gmod_subway_81-717_lvz_custom.Spawner.SeatTypeCustom.Name = Salon seats
+Entities.gmod_subway_81-717_lvz_custom.Spawner.SeatTypeCustom.Random = @[Common.Spawner.Random]
+Entities.gmod_subway_81-717_lvz_custom.Spawner.SeatTypeCustom.Old = @[Common.Spawner.Old]
+Entities.gmod_subway_81-717_lvz_custom.Spawner.SeatTypeCustom.New = @[Common.Spawner.New]
 
 
 # sections SPB
