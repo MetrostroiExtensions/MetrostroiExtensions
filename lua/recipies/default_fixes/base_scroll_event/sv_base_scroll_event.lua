@@ -36,3 +36,8 @@ function RECIPE:Inject(ent, entclass)
         train:OnButtonScroll(button, event_delta, ply)
     end)
 end
+
+function RECIPE:InjectNeeded()
+    if Metrostroi.Version > 1537278077 then return false end
+    return true
+end

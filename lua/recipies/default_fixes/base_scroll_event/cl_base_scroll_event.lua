@@ -248,3 +248,8 @@ function RECIPE:Inject(ent, entclass)
         end
     end)
 end
+
+function RECIPE:InjectNeeded()
+    if Metrostroi.Version > 1537278077 then return false end
+    return true
+end
