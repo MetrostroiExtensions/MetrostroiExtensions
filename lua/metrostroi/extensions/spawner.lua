@@ -26,7 +26,9 @@ end
 
 function MEL.FindSpawnerField(ent_or_entclass, field_name)
     local ent_class = MEL.GetEntclass(ent_or_entclass)
-    local spawner = MEL.EntTables[ent_class].Spawner
+    local ent_table = MEL.EntTables[ent_class]
+    local spawner = ent_table and ent_table.Spawner
+    if not spawner then return end
     if MEL.SpawnerFieldMappings[ent_class] and MEL.SpawnerFieldMappings[ent_class][field_name] then return spawner[MEL.SpawnerFieldMappings[ent_class][field_name].index] end
     for i, field in pairs(spawner) do
         if istable(field) and isnumber(i) and #field ~= 0 and field[SpawnerC.NAME] == field_name then return field end
@@ -68,7 +70,8 @@ function MEL.AddSpawnerField(ent_or_entclass, field_data, random_field_data, ove
     end
 
     local ent_class = getSpawnerEntclass(ent_or_entclass)
-    local spawner = MEL.EntTables[ent_class].Spawner
+    local ent_table = MEL.EntTables[ent_class]
+    local spawner = ent_table and ent_table.Spawner
     if not spawner then return end
     local old_pos = nil
     field_data = MEL.Helpers.SpawnerEnsureNamedFormat(field_data)
@@ -122,7 +125,8 @@ end
 
 function MEL.RemoveSpawnerField(ent_or_entclass, field_name)
     local ent_class = getSpawnerEntclass(ent_or_entclass)
-    local spawner = MEL.EntTables[ent_class].Spawner
+    local ent_table = MEL.EntTables[ent_class]
+    local spawner = ent_table and ent_table.Spawner
     if not spawner then return end
     for i, field in pairs(spawner) do
         field = MEL.Helpers.SpawnerEnsureNamedFormat(field)

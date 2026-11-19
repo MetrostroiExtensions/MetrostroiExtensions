@@ -122,11 +122,21 @@ MEL.ApplyBackports()
 function MEL.GetEntsByTrainType(trainType)
     if not trainType then
         MEL._LogError("trainType in GetEntsByTrainType is nil! Check your recipies.")
-        return
+        return {}
     end
 
     -- firstly, check if our train_type is table
-    if istable(trainType) then return trainType end
+    if istable(trainType) then
+        local entclasses = {}
+        for _, entclass in pairs(trainType) do
+            if MEL.EntTables[entclass] then
+                table.insert(entclasses, entclass)
+            else
+                MEL._LogWarning(Format("entity %s is not installed or doesn't exist, skipping...", tostring(entclass)))
+            end
+        end
+        return entclasses
+    end
     -- then check if our trainType is all
     if trainType == "all" then return MEL.TrainClasses end
     -- then try to find it as entity class
@@ -305,7 +315,9 @@ end
 
 function MEL.getEntTable(ent_class)
     if MEL.EntTables[ent_class] then return MEL.EntTables[ent_class] end
-    local ent_table = scripted_ents.GetStored(ent_class).t
+    local stored = scripted_ents.GetStored(ent_class)
+    if not stored then return nil end
+    local ent_table = stored.t
     ent_table.entclass = ent_class -- add entclass for convience
     MEL.EntTables[ent_class] = ent_table
     return ent_table
@@ -536,7 +548,9 @@ local function inject(isBackports)
             continue
         end
 
-        recipe:BeforeInject()
+        xpcall(recipe.BeforeInject, function(err)
+            MEL._LogError(Format("BeforeInject failed for recipe %s: %s", recipe.ClassName, err))
+        end, recipe)
     end
 
     for key, value in pairs(MEL.RecipeSpecific) do
@@ -555,24 +569,30 @@ local function inject(isBackports)
 
         logDebug(Format("[%s] injecting recipe %s", recipe.Scope, recipe.ClassName))
         -- call Inject method on every ent that recipe changes
-        for _, entclass in pairs(MEL.GetEntsByTrainType(recipe.TrainType)) do
-            if recipe:InjectNeeded(entclass) then
-                recipe:InjectSpawner(entclass)
-                recipe:Inject(MEL.EntTables[entclass], entclass)
-                -- call Inject method on all alredy spawned ent that recipe changes (for example, if we are loaded on server where trains were already spawned)
-                -- mark this call of inject as for entity (needed for InjectInto*Function)
-                MEL.InjectIntoSpawnedEnt = true
-                -- yup, this is slow
-                for _, ent in ents.Iterator() do
-                    if ent:GetClass() ~= entclass then continue end
-                    recipe:Inject(ent, entclass)
+        xpcall(function()
+            for _, entclass in pairs(MEL.GetEntsByTrainType(recipe.TrainType)) do
+                if not MEL.EntTables[entclass] then continue end
+                if recipe:InjectNeeded(entclass) then
+                    recipe:InjectSpawner(entclass)
+                    recipe:Inject(MEL.EntTables[entclass], entclass)
+                    -- call Inject method on all alredy spawned ent that recipe changes (for example, if we are loaded on server where trains were already spawned)
+                    -- mark this call of inject as for entity (needed for InjectInto*Function)
+                    MEL.InjectIntoSpawnedEnt = true
+                    -- yup, this is slow
+                    for _, ent in ents.Iterator() do
+                        if ent:GetClass() ~= entclass then continue end
+                        recipe:Inject(ent, entclass)
+                    end
+
+                    MEL.InjectIntoSpawnedEnt = false
                 end
-
-                MEL.InjectIntoSpawnedEnt = false
             end
-        end
 
-        recipe:InjectSystem()
+            recipe:InjectSystem()
+        end, function(err)
+            MEL.InjectIntoSpawnedEnt = false
+            MEL._LogError(Format("inject failed for recipe %s: %s", recipe.ClassName, err))
+        end)
     end
 
     if CLIENT then

@@ -107,8 +107,9 @@ end
 
 function MEL.GetButtonmapButtonMapping(ent_or_entclass, buttonmap_name, button_name, ignore_error)
     local ent_class = MEL.GetEntclass(ent_or_entclass)
-    if not MEL.getEntTable(ent_class).ButtonMap then return end
-    local buttonmap = MEL.getEntTable(ent_class).ButtonMap[buttonmap_name]
+    local ent_table = MEL.getEntTable(ent_class)
+    if not ent_table or not ent_table.ButtonMap then return end
+    local buttonmap = ent_table.ButtonMap[buttonmap_name]
     if not MEL.ButtonmapButtonMappings[ent_class] then MEL.ButtonmapButtonMappings[ent_class] = {} end
     if not MEL.ButtonmapButtonMappings[ent_class][buttonmap_name] then MEL.ButtonmapButtonMappings[ent_class][buttonmap_name] = {} end
     local button_index = MEL.ButtonmapButtonMappings[ent_class][buttonmap_name][button_name]
