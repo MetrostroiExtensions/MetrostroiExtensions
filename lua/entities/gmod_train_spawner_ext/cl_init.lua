@@ -583,7 +583,11 @@ local function draw(frame)
 	drawMain(frame)
 	local entityTypeIndex = entityTypesIndexes[panelRegistry.rootFrame:GetCookie("lastEntityType")] or 1
 	-- FIXME: if we call this in same tick, max amount of options that we can have would be limited to amount of options on first draw.. wtf
-	timer.Simple(0, function() panelRegistry.entityTypeComboBox:ChooseOptionID(entityTypeIndex) end)
+	timer.Simple(0, function()
+		if IsValid(panelRegistry.entityTypeComboBox) and panelRegistry.entityTypeComboBox:GetOptionText(entityTypeIndex) then
+			panelRegistry.entityTypeComboBox:ChooseOptionID(entityTypeIndex)
+		end
+	end)
 end
 
 local function createRootFrame()
