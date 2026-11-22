@@ -198,13 +198,22 @@ local function isRecipeEnabled(recipe_class_name)
     return GetConVar("metrostroi_ext_" .. recipe_class_name):GetBool()
 end
 
-local function initRecipe(recipe)
-    recipe:Init()
+local function createRecipeConVar(recipe)
     if not ConVarExists("metrostroi_ext_" .. recipe.ClassName) then
         -- add convar that will be able to disable that recipe on server
         CreateConVar("metrostroi_ext_" .. recipe.ClassName, 1, {FCVAR_ARCHIVE, FCVAR_REPLICATED}, "Status of Metrostroi Extensions recipe \"" .. recipe.ClassName .. "\": " .. recipe.Description .. ".", 0, 1)
     end
+end
 
+local function initRecipe(recipe)
+    -- Client recipes are registered on the server only to expose their ConVars.
+    if SERVER and recipe.Scope == "cl" then
+        createRecipeConVar(recipe)
+        return
+    end
+
+    recipe:Init()
+    createRecipeConVar(recipe)
     if isRecipeEnabled(recipe.ClassName) then
         -- add it to inject stack
         if recipe.BackportPriority then
@@ -234,7 +243,6 @@ local function loadRecipe(filename)
     -- load recipe
     -- send shared or client recipe to client
     if SERVER and (CURRENT_SCOPE == "sh" or CURRENT_SCOPE == "cl") then AddCSLuaFile(filename) end
-    if SERVER and CURRENT_SCOPE == "cl" then return end
     include(filename)
     if CLIENT and CURRENT_SCOPE == "sv" and not game.SinglePlayer() then
         MEL._LogError("ACHTUNG!!! SERVER RECIPE ON CLIENT!!!")
@@ -297,6 +305,36 @@ local prefixes = {
     ["gmod_track_"] = true
 }
 
+local clientRecipeFields = {"ClientProps", "ButtonMap", "ButtonMapCopy", "AutoAnims", "AutoAnimNames", "AutoAnimIndexes", "Lights"}
+MEL.ClientRecipeDefaults = MEL.ClientRecipeDefaults or {}
+
+local function saveClientRecipeDefaults(entclass, entTable)
+    if not CLIENT or MEL.ClientRecipeDefaults[entclass] then return end
+    local defaults = {}
+    for _, field in ipairs(clientRecipeFields) do
+        defaults[field] = entTable[field]
+    end
+    MEL.ClientRecipeDefaults[entclass] = table.Copy(defaults)
+end
+
+local function restoreClientRecipeDefaults()
+    local function restore(entTable, defaults)
+        local restored = table.Copy(defaults)
+        for _, field in ipairs(clientRecipeFields) do
+            entTable[field] = restored[field]
+        end
+    end
+
+    for entclass, defaults in pairs(MEL.ClientRecipeDefaults) do
+        local stored = scripted_ents.GetStored(entclass)
+        if stored then restore(stored.t, defaults) end
+    end
+    for ent in pairs(Metrostroi.SpawnedTrains) do
+        local defaults = MEL.ClientRecipeDefaults[ent:GetClass()]
+        if defaults then restore(ent, defaults) end
+    end
+end
+
 local function getEntTables()
     -- we are using this method cause default metrotroi table caused problems
     for entclass in pairs(scripted_ents.GetList()) do
@@ -306,6 +344,7 @@ local function getEntTables()
             local ent_table = scripted_ents.GetStored(entclass).t
             ent_table.entclass = entclass -- add entclass for convience
             ent_table.spawner = ent_table.Spawner -- add spawner for convience
+            saveClientRecipeDefaults(entclass, ent_table)
             MEL.EntTables[entclass] = ent_table
         end
 
@@ -688,6 +727,7 @@ end
 if CLIENT then
     net.Receive("MetrostroiExtDoReload", function(len, ply)
         MEL._LogInfo(Format("(%s) reloading recipies...", string.FormattedTime(CurTime(), "%02i:%02i:%02i")))
+        restoreClientRecipeDefaults()
         MEL.ApplyBackports()
         -- clear all inject stacks
         MEL.FunctionInjectStack = {}
@@ -705,8 +745,11 @@ if CLIENT then
         MEL.HidePanelOverrides = {}
         MEL.ClientPropsToReload = {}
         MEL.DecoratorCache = {}
+        MEL._UpdatedButtonmaps = {}
+        MEL.ButtonmapButtonMappings = {}
         discoverRecipies()
         getEntTables()
+        if backportsNeeded then inject(true) end
         inject()
         -- try to reload all spawned trains csents and buttonmaps
         for ent, _ in pairs(Metrostroi.SpawnedTrains) do
